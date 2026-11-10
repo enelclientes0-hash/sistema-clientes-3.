@@ -1,0 +1,738 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadastro de Clientes</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f4f8;color:#243247}
+header{background:#102f53;color:white;padding:20px}
+header h2{margin:0}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:12px}
+main{max-width:1150px;margin:25px auto;padding:15px}
+.card{background:white;padding:22px;border-radius:12px;margin-bottom:20px;box-shadow:0 3px 12px #0000000c}
+h3{color:#153b63;margin-top:0}
+label{display:block;font-weight:bold;margin-bottom:5px}
+input{width:100%;padding:12px;border:1px solid #ccd5df;border-radius:7px;margin:7px 0 14px;font-size:15px}
+button{padding:11px 16px;border:0;border-radius:7px;background:#164b7e;color:white;cursor:pointer;font-weight:bold}
+button:disabled{opacity:.6;cursor:wait}
+.acoes{display:flex;gap:6px;flex-wrap:wrap}
+.excluir{background:#a52b2b}
+.editar{background:#39734a}
+.documentos{background:#7650a5}
+.excel{background:#187747}
+.limpar{background:#687789}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:12px;border-bottom:1px solid #e5eaf0}
+th{background:#f5f7fa}
+.resumo{display:flex;gap:12px;flex-wrap:wrap;margin:15px 0}
+.numero{background:#edf4fb;padding:16px;border-radius:9px;flex:1;min-width:160px}
+.numero strong{display:block;font-size:27px;color:#164b7e;margin-top:6px}
+#mensagem{color:#164b7e}
+.modal{display:none;position:fixed;inset:0;background:#0009;z-index:10;align-items:center;justify-content:center;padding:15px}
+.modal-conteudo{background:white;width:100%;max-width:650px;max-height:90vh;overflow:auto;border-radius:12px;padding:22px}
+.arquivo{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #e5eaf0;overflow-wrap:anywhere}
+.arquivo-nome{flex:1}
+.pequeno{font-size:12px;color:#687789}
+.fechar{background:#687789}
+#mensagemDocs{color:#164b7e}
+@media(max-width:600px){
+ table{font-size:12px}
+ th,td{padding:7px}
+ .topo{align-items:flex-start}
+ .arquivo{align-items:flex-start;flex-direction:column}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="topo">
+<div>
+<h2>Cadastro de Clientes</h2>
+<p>Painel administrativo</p>
+</div>
+<button id="sair">Sair</button>
+</div>
+</header>
+
+<main>
+
+<section class="card">
+<h3>Novo cliente</h3>
+
+<form id="formCliente">
+<div class="grid">
+
+<div>
+<label>Nome do cliente</label>
+<input id="nome" required placeholder="Nome completo">
+</div>
+
+<div>
+<label>Unidade Consumidora (UC)</label>
+<input id="uc" required placeholder="Número da UC">
+</div>
+
+<div>
+<label>Telefone</label>
+<input id="telefone" type="tel" maxlength="15"
+placeholder="(88) 99999-9999">
+</div>
+
+<div>
+<label>Anexar documentos do cliente</label>
+<input id="arquivosCadastro" type="file" multiple
+accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+
+</div>
+
+</div>
+
+<button id="salvar" type="submit">Cadastrar cliente</button>
+<button type="button" id="cancelar" class="limpar"
+style="display:none">Cancelar edição</button>
+</form>
+
+<p id="mensagem"></p>
+</section>
+
+<section class="card">
+<h3>Relatório de clientes por data</h3>
+
+<div class="grid">
+<div>
+<label>Data inicial</label>
+<input type="date" id="dataInicio">
+</div>
+<div>
+<label>Data final</label>
+<input type="date" id="dataFim">
+</div>
+</div>
+
+<div class="acoes">
+<button id="filtrar">Consultar período</button>
+<button id="limparDatas" class="limpar">Limpar datas</button>
+<button id="exportar" class="excel">Exportar Excel</button>
+</div>
+
+<div class="resumo">
+<div class="numero">
+Clientes no período
+<strong id="totalPeriodo">0</strong>
+</div>
+<div class="numero">
+Total geral
+<strong id="totalGeral">0</strong>
+</div>
+</div>
+
+<p id="periodoTexto">Exibindo todos os clientes.</p>
+</section>
+
+<section class="card">
+<h3>Clientes cadastrados</h3>
+
+<input id="pesquisa" type="search"
+placeholder="Pesquisar por nome ou UC...">
+
+<div style="overflow-x:auto">
+<table>
+<thead>
+<tr>
+<th>Nome</th>
+<th>UC</th>
+<th>Telefone</th>
+<th>Data do cadastro</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="lista"></tbody>
+</table>
+</div>
+
+<p id="vazio">Carregando clientes...</p>
+</section>
+
+</main>
+
+<!-- JANELA DE DOCUMENTOS -->
+<div class="modal" id="modalDocs">
+<div class="modal-conteudo">
+
+<div class="topo">
+<div>
+<h3>Documentos do cliente</h3>
+<p id="nomeClienteDocs"></p>
+</div>
+<button class="fechar" id="fecharDocs">Fechar</button>
+</div>
+
+<hr>
+
+<label>Selecionar documentos</label>
+<input type="file" id="arquivos" multiple>
+
+<p class="pequeno">
+Limite de 20 MB por arquivo. Os documentos ficam privados.
+</p>
+
+<button id="enviarDocs">Enviar documentos</button>
+
+<p id="mensagemDocs"></p>
+
+<hr>
+
+<h3>Arquivos anexados</h3>
+<div id="listaDocs">Carregando documentos...</div>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script>
+const SUPABASE_URL = "https://vfwvwgmgizavtnoptrvb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_e6iGnalwPhL0kCyf1lhBDg_vqmM12UE";
+const BUCKET = "documentos-clientes";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+let usuarioAtual = null;
+let clientes = [];
+let editando = null;
+let clienteDocumentos = null;
+let dataInicial = "";
+let dataFinal = "";
+
+const $ = id => document.getElementById(id);
+
+// FORMATAÇÃO DO TELEFONE
+$("telefone").addEventListener("input", e => {
+  let n = e.target.value.replace(/\D/g,"").slice(0,11);
+
+  if(n.length > 10)
+    n = n.replace(/^(\d{2})(\d{5})(\d{4})/,"($1) $2-$3");
+  else if(n.length > 6)
+    n = n.replace(/^(\d{2})(\d{4})(\d{0,4})/,"($1) $2-$3");
+  else if(n.length > 2)
+    n = n.replace(/^(\d{2})(\d{0,5})/,"($1) $2");
+  else if(n.length)
+    n = "(" + n;
+
+  e.target.value = n;
+});
+
+// FORMATAÇÃO DE DATA
+function formatarData(data){
+  if(!data) return "Não informada";
+
+  return new Date(data).toLocaleString("pt-BR",{
+    day:"2-digit",
+    month:"2-digit",
+    year:"numeric",
+    hour:"2-digit",
+    minute:"2-digit"
+  });
+}
+
+function dataLocal(data){
+  const d = new Date(data);
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth()+1).padStart(2,"0");
+  const dia = String(d.getDate()).padStart(2,"0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+// VERIFICAR LOGIN
+async function iniciar(){
+  const {data,error} = await db.auth.getSession();
+
+  if(error || !data.session){
+    location.href = "index.html";
+    return;
+  }
+
+  usuarioAtual = data.session.user;
+  await carregar();
+}
+
+// CARREGAR CLIENTES
+async function carregar(){
+  $("vazio").textContent = "Carregando clientes...";
+
+  const {data,error} = await db.from("clientes")
+    .select("id,nome,uc,telefone,created_at")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    $("vazio").textContent = "Erro: " + error.message;
+    return;
+  }
+
+  clientes = data || [];
+  $("totalGeral").textContent = clientes.length;
+  mostrar();
+}
+
+// FILTROS
+function clientesFiltrados(){
+  const termo = $("pesquisa").value.toLowerCase();
+
+  return clientes.filter(c => {
+    const texto =
+      c.nome.toLowerCase().includes(termo) ||
+      c.uc.toLowerCase().includes(termo);
+
+    const dia = dataLocal(c.created_at);
+
+    return texto &&
+      (!dataInicial || dia >= dataInicial) &&
+      (!dataFinal || dia <= dataFinal);
+  });
+}
+
+// MOSTRAR CLIENTES
+function mostrar(){
+  const encontrados = clientesFiltrados();
+  const lista = $("lista");
+
+  lista.innerHTML = "";
+  $("totalPeriodo").textContent = encontrados.length;
+
+  $("vazio").style.display =
+    encontrados.length ? "none" : "block";
+
+  if(!encontrados.length){
+    $("vazio").textContent = "Nenhum cliente encontrado.";
+  }
+
+  encontrados.forEach(c => {
+    const tr = document.createElement("tr");
+
+    [c.nome,c.uc,c.telefone || "",formatarData(c.created_at)]
+      .forEach(v => {
+        const td = document.createElement("td");
+        td.textContent = v;
+        tr.appendChild(td);
+      });
+
+    const td = document.createElement("td");
+    td.className = "acoes";
+
+    const docs = document.createElement("button");
+    docs.textContent = "Documentos";
+    docs.className = "documentos";
+    docs.onclick = () => abrirDocumentos(c);
+
+    const editar = document.createElement("button");
+    editar.textContent = "Editar";
+    editar.className = "editar";
+    editar.onclick = () => prepararEdicao(c);
+
+    const excluir = document.createElement("button");
+    excluir.textContent = "Excluir";
+    excluir.className = "excluir";
+    excluir.onclick = () => remover(c);
+
+    td.append(docs,editar,excluir);
+    tr.appendChild(td);
+    lista.appendChild(tr);
+  });
+}
+
+// RELATÓRIO POR DATA
+$("filtrar").onclick = () => {
+  const inicio = $("dataInicio").value;
+  const fim = $("dataFim").value;
+
+  if(inicio && fim && inicio > fim){
+    alert("A data inicial não pode ser posterior à data final.");
+    return;
+  }
+
+  dataInicial = inicio;
+  dataFinal = fim;
+
+  $("periodoTexto").textContent =
+    inicio || fim
+    ? "Exibindo clientes do período selecionado."
+    : "Exibindo todos os clientes.";
+
+  mostrar();
+};
+
+$("limparDatas").onclick = () => {
+  $("dataInicio").value = "";
+  $("dataFim").value = "";
+  dataInicial = "";
+  dataFinal = "";
+  $("periodoTexto").textContent = "Exibindo todos os clientes.";
+  mostrar();
+};
+
+// EXPORTAR EXCEL
+$("exportar").onclick = () => {
+  const encontrados = clientesFiltrados();
+
+  if(!encontrados.length){
+    alert("Não há clientes para exportar.");
+    return;
+  }
+
+  if(typeof XLSX === "undefined"){
+    alert("Não foi possível carregar o Excel. Verifique sua internet.");
+    return;
+  }
+
+  const dados = encontrados.map(c => ({
+    "Nome do cliente": c.nome,
+    "Unidade Consumidora": c.uc,
+    "Telefone": c.telefone || "",
+    "Data do cadastro": formatarData(c.created_at)
+  }));
+
+  const planilha = XLSX.utils.json_to_sheet(dados);
+  const livro = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(livro,planilha,"Clientes");
+
+  XLSX.writeFile(
+    livro,
+    dataInicial || dataFinal
+      ? "Relatorio_clientes_periodo.xlsx"
+      : "Relatorio_todos_clientes.xlsx"
+  );
+};
+
+// EDITAR CLIENTE
+function prepararEdicao(c){
+  editando = c.id;
+  $("nome").value = c.nome;
+  $("uc").value = c.uc;
+  $("telefone").value = c.telefone || "";
+  $("arquivosCadastro").value = "";
+
+  $("salvar").textContent = "Salvar alterações";
+  $("cancelar").style.display = "inline-block";
+
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+$("cancelar").onclick = () => {
+  editando = null;
+  $("formCliente").reset();
+  $("salvar").textContent = "Cadastrar cliente";
+  $("cancelar").style.display = "none";
+  $("mensagem").textContent = "";
+};
+
+// ENVIAR ARQUIVOS PARA A PASTA DO CLIENTE
+async function enviarArquivosDoCadastro(clienteId, arquivos){
+  if(!arquivos || !arquivos.length) return [];
+
+  const pasta = usuarioAtual.id + "/" + clienteId;
+  const erros = [];
+
+  for(const arquivo of arquivos){
+    if(arquivo.size > 20 * 1024 * 1024){
+      erros.push(arquivo.name + ": arquivo maior que 20 MB");
+      continue;
+    }
+
+    const nomeSeguro = arquivo.name.replace(/[^\w.\-() ]/g,"_");
+    const caminho = pasta + "/" + Date.now() + "_" + nomeSeguro;
+
+    const {error} = await db.storage
+      .from(BUCKET)
+      .upload(caminho,arquivo,{
+        cacheControl:"3600",
+        upsert:false
+      });
+
+    if(error) erros.push(arquivo.name + ": " + error.message);
+  }
+
+  return erros;
+}
+
+// CADASTRAR OU ATUALIZAR CLIENTE E ENVIAR ANEXOS
+$("formCliente").addEventListener("submit",async e => {
+  e.preventDefault();
+
+  const dados = {
+    nome:$("nome").value.trim(),
+    uc:$("uc").value.trim(),
+    telefone:$("telefone").value.trim()
+  };
+
+  const arquivosSelecionados = Array.from($("arquivosCadastro").files);
+
+  if(arquivosSelecionados.some(a => a.size > 20 * 1024 * 1024)){
+    $("mensagem").textContent = "Um ou mais arquivos ultrapassam o limite de 20 MB.";
+    return;
+  }
+
+  $("salvar").disabled = true;
+  $("mensagem").textContent = "Salvando cliente...";
+
+  let resultado;
+  let clienteId = editando;
+
+  if(editando){
+    resultado = await db.from("clientes")
+      .update({...dados,updated_at:new Date().toISOString()})
+      .eq("id",editando);
+  }else{
+    resultado = await db.from("clientes")
+      .insert({...dados,user_id:usuarioAtual.id})
+      .select("id")
+      .single();
+
+    if(!resultado.error && resultado.data){
+      clienteId = resultado.data.id;
+    }
+  }
+
+  if(resultado.error){
+    $("mensagem").textContent = "Erro ao salvar cliente: " + resultado.error.message;
+  }else{
+    let errosArquivos = [];
+
+    if(arquivosSelecionados.length){
+      $("mensagem").textContent = "Cliente salvo. Enviando documentos...";
+      errosArquivos = await enviarArquivosDoCadastro(clienteId,arquivosSelecionados);
+    }
+
+    if(errosArquivos.length){
+      $("mensagem").textContent =
+        "Cliente salvo, mas houve erro em alguns anexos: " + errosArquivos.join(" | ") +
+        ". Você poderá tentar novamente pelo botão Documentos.";
+    }else{
+      $("mensagem").textContent =
+        editando
+          ? "Cliente atualizado!" + (arquivosSelecionados.length ? " Documentos anexados!" : "")
+          : "Cliente cadastrado!" + (arquivosSelecionados.length ? " Documentos anexados!" : "");
+    }
+
+    $("formCliente").reset();
+    editando = null;
+    $("salvar").textContent = "Cadastrar cliente";
+    $("cancelar").style.display = "none";
+
+    await carregar();
+  }
+
+  $("salvar").disabled = false;
+});
+
+// EXCLUIR CLIENTE
+async function remover(c){
+  if(!confirm("Deseja excluir o cliente " + c.nome + "?")) return;
+
+  const {error} = await db.from("clientes")
+    .delete()
+    .eq("id",c.id);
+
+  if(error){
+    alert("Erro ao excluir: " + error.message);
+  }else{
+    await carregar();
+  }
+}
+
+// ABRIR DOCUMENTOS DO CLIENTE
+async function abrirDocumentos(c){
+  clienteDocumentos = c;
+
+  $("nomeClienteDocs").textContent =
+    c.nome + " | UC: " + c.uc;
+
+  $("arquivos").value = "";
+  $("mensagemDocs").textContent = "";
+  $("listaDocs").textContent = "Carregando documentos...";
+
+  $("modalDocs").style.display = "flex";
+
+  await carregarDocumentos();
+}
+
+// FECHAR JANELA
+function fecharDocumentos(){
+  $("modalDocs").style.display = "none";
+  clienteDocumentos = null;
+}
+
+$("fecharDocs").onclick = fecharDocumentos;
+
+$("modalDocs").addEventListener("click",e => {
+  if(e.target === $("modalDocs")) fecharDocumentos();
+});
+
+// CARREGAR DOCUMENTOS
+async function carregarDocumentos(){
+  if(!clienteDocumentos || !usuarioAtual) return;
+
+  const pasta =
+    usuarioAtual.id + "/" + clienteDocumentos.id;
+
+  const {data,error} = await db.storage
+    .from(BUCKET)
+    .list(pasta,{
+      limit:100,
+      sortBy:{column:"created_at",order:"desc"}
+    });
+
+  const lista = $("listaDocs");
+  lista.innerHTML = "";
+
+  if(error){
+    lista.textContent = "Erro ao consultar documentos: " + error.message;
+    return;
+  }
+
+  const arquivos = (data || []).filter(a => a.name);
+
+  if(!arquivos.length){
+    lista.textContent = "Nenhum documento anexado a este cliente.";
+    return;
+  }
+
+  arquivos.forEach(arquivo => {
+    const caminho = pasta + "/" + arquivo.name;
+
+    const linha = document.createElement("div");
+    linha.className = "arquivo";
+
+    const nome = document.createElement("div");
+    nome.className = "arquivo-nome";
+    nome.textContent = arquivo.name;
+
+    const botoes = document.createElement("div");
+    botoes.className = "acoes";
+
+    const baixar = document.createElement("button");
+    baixar.textContent = "Baixar";
+    baixar.onclick = () => baixarDocumento(caminho);
+
+    const excluir = document.createElement("button");
+    excluir.textContent = "Excluir";
+    excluir.className = "excluir";
+    excluir.onclick = () => excluirDocumento(caminho,arquivo.name);
+
+    botoes.append(baixar,excluir);
+    linha.append(nome,botoes);
+    lista.appendChild(linha);
+  });
+}
+
+// ENVIAR DOCUMENTOS
+$("enviarDocs").onclick = async () => {
+  if(!clienteDocumentos) return;
+
+  const arquivos = Array.from($("arquivos").files);
+
+  if(!arquivos.length){
+    alert("Selecione pelo menos um documento.");
+    return;
+  }
+
+  if(arquivos.some(a => a.size > 20 * 1024 * 1024)){
+    alert("Cada arquivo deve ter no máximo 20 MB.");
+    return;
+  }
+
+  $("enviarDocs").disabled = true;
+  $("mensagemDocs").textContent = "Enviando documentos...";
+
+  const pasta =
+    usuarioAtual.id + "/" + clienteDocumentos.id;
+
+  let erros = [];
+
+  for(const arquivo of arquivos){
+
+    const nomeSeguro = arquivo.name.replace(/[^\w.\-() ]/g,"_");
+    const caminho = pasta + "/" + Date.now() + "_" + nomeSeguro;
+
+    const {error} = await db.storage
+      .from(BUCKET)
+      .upload(caminho,arquivo,{
+        cacheControl:"3600",
+        upsert:false
+      });
+
+    if(error){
+      erros.push(arquivo.name + ": " + error.message);
+    }
+  }
+
+  $("enviarDocs").disabled = false;
+  $("arquivos").value = "";
+
+  if(erros.length){
+    $("mensagemDocs").textContent =
+      "Alguns arquivos não foram enviados: " + erros.join(" | ");
+  }else{
+    $("mensagemDocs").textContent = "Documentos enviados com sucesso!";
+  }
+
+  await carregarDocumentos();
+};
+
+// BAIXAR DOCUMENTO PRIVADO
+async function baixarDocumento(caminho){
+  const {data,error} = await db.storage
+    .from(BUCKET)
+    .createSignedUrl(caminho,60,{download:true});
+
+  if(error){
+    alert("Erro ao abrir documento: " + error.message);
+    return;
+  }
+
+  window.location.assign(data.signedUrl);
+}
+
+// EXCLUIR DOCUMENTO
+async function excluirDocumento(caminho,nome){
+  if(!confirm("Deseja excluir o documento " + nome + "?")) return;
+
+  const {error} = await db.storage
+    .from(BUCKET)
+    .remove([caminho]);
+
+  if(error){
+    alert("Erro ao excluir: " + error.message);
+    return;
+  }
+
+  $("mensagemDocs").textContent = "Documento excluído.";
+  await carregarDocumentos();
+}
+
+// PESQUISA
+$("pesquisa").addEventListener("input",mostrar);
+
+// SAIR
+$("sair").onclick = async () => {
+  await db.auth.signOut();
+  location.href = "index.html";
+};
+
+// INICIAR
+iniciar();
+
+</script>
+</body>
+</html>
