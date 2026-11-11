@@ -1,0 +1,840 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadastro de Clientes</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f4f8;color:#243247}
+header{background:#102f53;color:white;padding:20px}
+header h2{margin:0}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:12px}
+main{max-width:1150px;margin:25px auto;padding:15px}
+.card{background:white;padding:22px;border-radius:12px;margin-bottom:20px;box-shadow:0 3px 12px #0000000c}
+h3{color:#153b63;margin-top:0}
+label{display:block;font-weight:bold;margin-bottom:5px}
+input{width:100%;padding:12px;border:1px solid #ccd5df;border-radius:7px;margin:7px 0 14px;font-size:15px}
+button{padding:11px 16px;border:0;border-radius:7px;background:#164b7e;color:white;cursor:pointer;font-weight:bold}
+button:disabled{opacity:.6;cursor:wait}
+.acoes{display:flex;gap:6px;flex-wrap:wrap}
+.excluir{background:#a52b2b}
+.editar{background:#39734a}
+.documentos{background:#7650a5}
+.excel{background:#187747}
+.limpar{background:#687789}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:12px;border-bottom:1px solid #e5eaf0}
+th{background:#f5f7fa}
+.resumo{display:flex;gap:12px;flex-wrap:wrap;margin:15px 0}
+.numero{background:#edf4fb;padding:16px;border-radius:9px;flex:1;min-width:160px}
+.numero strong{display:block;font-size:27px;color:#164b7e;margin-top:6px}
+#mensagem{color:#164b7e}
+.modal{display:none;position:fixed;inset:0;background:#0009;z-index:10;align-items:center;justify-content:center;padding:15px}
+.modal-conteudo{background:white;width:100%;max-width:650px;max-height:90vh;overflow:auto;border-radius:12px;padding:22px}
+.arquivo{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #e5eaf0;overflow-wrap:anywhere}
+.arquivo-nome{flex:1}
+.pequeno{font-size:12px;color:#687789}
+.fechar{background:#687789}
+#mensagemDocs{color:#164b7e}
+@media(max-width:600px){
+ table{font-size:12px}
+ th,td{padding:7px}
+ .topo{align-items:flex-start}
+ .arquivo{align-items:flex-start;flex-direction:column}
+}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tabs button{background:#e7eef7;color:#173b61;border:1px solid #cfdae8}
+.tabs button.ativa{background:#102f53;color:#fff}
+.tab-pane[hidden]{display:none!important}
+.protocolos-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.protocolos-top input{flex:1;min-width:220px}
+.protocolos-stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.protocolos-stats .numero{min-width:120px}
+.protocolos-stats strong{font-size:23px}
+.p-status{font-weight:bold}.p-pendente{color:#a86400}.p-aprovado{color:#16803b}.p-reprovado{color:#b42323}
+.p-av{display:inline-block;background:#fff0c2;color:#8b5b00;border:1px solid #e2b44e;border-radius:5px;padding:2px 5px;font-size:11px;font-weight:bold;margin-right:5px}
+.p-actions{display:flex;gap:5px;flex-wrap:wrap}.p-actions button{padding:7px 10px}.p-edit{background:#dceafe;color:#174a86}.p-del{background:#b42323}
+.p-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.p-form label{font-size:13px}.p-form input,.p-form select{margin:6px 0 10px}
+.comunicado-card{border:1px solid #ead9a4;background:#fff9e8;border-radius:10px;padding:13px;margin:9px 0;cursor:pointer;text-align:left;color:#584300;width:100%}
+.comunicado-card.vencido{border-color:#e9aaa5;background:#fff0ef;color:#8c211a}
+.comunicado-card.av{border:2px solid #d18b00;background:#fff5d9}
+.comunicado-card strong,.comunicado-card span{display:block;margin:3px 0}.comunicado-card span{font-size:13px}
+@media(max-width:650px){.protocolos-top{align-items:stretch}.protocolos-top input{min-width:100%}}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="topo">
+<div>
+<h2>Cadastro de Clientes</h2>
+<p>Painel administrativo</p>
+</div>
+<button id="sair">Sair</button>
+</div>
+</header>
+
+<main>
+<nav class="tabs" aria-label="Módulos do sistema"><button type="button" class="ativa" data-tab="Clientes">Clientes</button><button type="button" data-tab="Protocolos">Protocolos</button><button type="button" data-tab="Comunicados">Comunicados</button></nav>
+
+<div id="abaClientes" class="tab-pane">
+<section class="card">
+<h3>Novo cliente</h3>
+
+<form id="formCliente">
+<div class="grid">
+
+<div>
+<label>Nome do cliente</label>
+<input id="nome" required placeholder="Nome completo">
+</div>
+
+<div>
+<label>Unidade Consumidora (UC)</label>
+<input id="uc" required placeholder="Número da UC">
+</div>
+
+<div>
+<label>Telefone</label>
+<input id="telefone" type="tel" maxlength="15"
+placeholder="(88) 99999-9999">
+</div>
+
+<div>
+<label>Anexar documentos do cliente</label>
+<input id="arquivosCadastro" type="file" multiple
+accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+
+</div>
+
+</div>
+
+<button id="salvar" type="submit">Cadastrar cliente</button>
+<button type="button" id="cancelar" class="limpar"
+style="display:none">Cancelar edição</button>
+</form>
+
+<p id="mensagem"></p>
+</section>
+
+<section class="card">
+<h3>Relatório de clientes por data</h3>
+
+<div class="grid">
+<div>
+<label>Data inicial</label>
+<input type="date" id="dataInicio">
+</div>
+<div>
+<label>Data final</label>
+<input type="date" id="dataFim">
+</div>
+</div>
+
+<div class="acoes">
+<button id="filtrar">Consultar período</button>
+<button id="limparDatas" class="limpar">Limpar datas</button>
+<button id="exportar" class="excel">Exportar Excel</button>
+</div>
+
+<div class="resumo">
+<div class="numero">
+Clientes no período
+<strong id="totalPeriodo">0</strong>
+</div>
+<div class="numero">
+Total geral
+<strong id="totalGeral">0</strong>
+</div>
+</div>
+
+<p id="periodoTexto">Exibindo todos os clientes.</p>
+</section>
+
+<section class="card">
+<h3>Clientes cadastrados</h3>
+
+<input id="pesquisa" type="search"
+placeholder="Pesquisar por nome ou UC...">
+
+<div style="overflow-x:auto">
+<table>
+<thead>
+<tr>
+<th>Nome</th>
+<th>UC</th>
+<th>Telefone</th>
+<th>Data do cadastro</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="lista"></tbody>
+</table>
+</div>
+
+<p id="vazio">Carregando clientes...</p>
+</section>
+
+</div>
+
+<div id="abaProtocolos" class="tab-pane" hidden>
+<section class="card">
+<h3>Protocolos</h3>
+<form id="formProtocolo">
+<div class="p-form">
+<label>UC (Unidade Consumidora)<input id="p_uc"></label>
+<label>Nº do Protocolo *<input id="p_protocolo" required></label>
+<label>Nome do Contato<input id="p_contato"></label>
+<label>Tipo da Solicitação<input id="p_servico"></label>
+<label>Nº da Ordem de Serviço<input id="p_os"></label>
+<label>Data/Hora da Solicitação<input id="p_data" placeholder="DD/MM/AAAA HH:MM"></label>
+<label>Prazo de Resposta<input id="p_prazo" placeholder="DD/MM/AAAA ou prazo em dias"></label>
+<label>Atendente<input id="p_atendente"></label>
+<label>Status<select id="p_status"><option>Pendente</option><option>Aprovado</option><option>Reprovado</option></select></label>
+<label style="display:flex;align-items:center;gap:8px"><input id="p_av" type="checkbox" style="width:auto;margin:0"> Marcar A/V</label>
+</div>
+<div class="acoes"><button id="p_salvar" type="submit">Cadastrar protocolo</button><button id="p_cancelar" type="button" class="limpar" hidden>Cancelar edição</button></div>
+<p id="p_msg"></p>
+</form>
+</section>
+<section class="card">
+<h3>Lista de protocolos</h3>
+<div class="protocolos-top"><input id="p_busca" type="search" placeholder="Pesquisar protocolo, UC, contato ou serviço"><button id="p_excel" class="excel" type="button">Exportar Excel</button></div>
+<div class="protocolos-stats"><div class="numero">Total<strong id="p_total">0</strong></div><div class="numero">Pendentes<strong id="p_pendentes">0</strong></div><div class="numero">Aprovados<strong id="p_aprovados">0</strong></div><div class="numero">Reprovados<strong id="p_reprovados">0</strong></div></div>
+<div style="overflow-x:auto"><table><thead><tr><th>Protocolo</th><th>UC</th><th>Contato</th><th>Tipo da Solicitação</th><th>Status</th><th>Ações</th></tr></thead><tbody id="p_lista"></tbody></table></div><p id="p_vazio">Carregando protocolos...</p>
+</section>
+</div>
+
+<div id="abaComunicados" class="tab-pane" hidden>
+<section class="card"><h3>Comunicados</h3><p class="pequeno">Acompanhe os protocolos pendentes por prazo. Os casos A/V aparecem primeiro.</p><div id="comunicadosLista">Carregando comunicados...</div></section>
+</div>
+</main>
+
+<!-- JANELA DE DOCUMENTOS -->
+<div class="modal" id="modalDocs">
+<div class="modal-conteudo">
+
+<div class="topo">
+<div>
+<h3>Documentos do cliente</h3>
+<p id="nomeClienteDocs"></p>
+</div>
+<button class="fechar" id="fecharDocs">Fechar</button>
+</div>
+
+<hr>
+
+<label>Selecionar documentos</label>
+<input type="file" id="arquivos" multiple>
+
+<p class="pequeno">
+Limite de 20 MB por arquivo. Os documentos ficam privados.
+</p>
+
+<button id="enviarDocs">Enviar documentos</button>
+
+<p id="mensagemDocs"></p>
+
+<hr>
+
+<h3>Arquivos anexados</h3>
+<div id="listaDocs">Carregando documentos...</div>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script>
+const SUPABASE_URL = "https://vfwvwgmgizavtnoptrvb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_e6iGnalwPhL0kCyf1lhBDg_vqmM12UE";
+const BUCKET = "documentos-clientes";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+let usuarioAtual = null;
+let clientes = [];
+let editando = null;
+let clienteDocumentos = null;
+let dataInicial = "";
+let dataFinal = "";
+
+const $ = id => document.getElementById(id);
+
+// FORMATAÇÃO DO TELEFONE
+$("telefone").addEventListener("input", e => {
+  let n = e.target.value.replace(/\D/g,"").slice(0,11);
+
+  if(n.length > 10)
+    n = n.replace(/^(\d{2})(\d{5})(\d{4})/,"($1) $2-$3");
+  else if(n.length > 6)
+    n = n.replace(/^(\d{2})(\d{4})(\d{0,4})/,"($1) $2-$3");
+  else if(n.length > 2)
+    n = n.replace(/^(\d{2})(\d{0,5})/,"($1) $2");
+  else if(n.length)
+    n = "(" + n;
+
+  e.target.value = n;
+});
+
+// FORMATAÇÃO DE DATA
+function formatarData(data){
+  if(!data) return "Não informada";
+
+  return new Date(data).toLocaleString("pt-BR",{
+    day:"2-digit",
+    month:"2-digit",
+    year:"numeric",
+    hour:"2-digit",
+    minute:"2-digit"
+  });
+}
+
+function dataLocal(data){
+  const d = new Date(data);
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth()+1).padStart(2,"0");
+  const dia = String(d.getDate()).padStart(2,"0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+// VERIFICAR LOGIN
+async function iniciar(){
+  const {data,error} = await db.auth.getSession();
+
+  if(error || !data.session){
+    location.href = "index.html";
+    return;
+  }
+
+  usuarioAtual = data.session.user;
+  await carregar();
+}
+
+// CARREGAR CLIENTES
+async function carregar(){
+  $("vazio").textContent = "Carregando clientes...";
+
+  const {data,error} = await db.from("clientes")
+    .select("id,nome,uc,telefone,created_at")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    $("vazio").textContent = "Erro: " + error.message;
+    return;
+  }
+
+  clientes = data || [];
+  $("totalGeral").textContent = clientes.length;
+  mostrar();
+}
+
+// FILTROS
+function clientesFiltrados(){
+  const termo = $("pesquisa").value.toLowerCase();
+
+  return clientes.filter(c => {
+    const texto =
+      c.nome.toLowerCase().includes(termo) ||
+      c.uc.toLowerCase().includes(termo);
+
+    const dia = dataLocal(c.created_at);
+
+    return texto &&
+      (!dataInicial || dia >= dataInicial) &&
+      (!dataFinal || dia <= dataFinal);
+  });
+}
+
+// MOSTRAR CLIENTES
+function mostrar(){
+  const encontrados = clientesFiltrados();
+  const lista = $("lista");
+
+  lista.innerHTML = "";
+  $("totalPeriodo").textContent = encontrados.length;
+
+  $("vazio").style.display =
+    encontrados.length ? "none" : "block";
+
+  if(!encontrados.length){
+    $("vazio").textContent = "Nenhum cliente encontrado.";
+  }
+
+  encontrados.forEach(c => {
+    const tr = document.createElement("tr");
+
+    [c.nome,c.uc,c.telefone || "",formatarData(c.created_at)]
+      .forEach(v => {
+        const td = document.createElement("td");
+        td.textContent = v;
+        tr.appendChild(td);
+      });
+
+    const td = document.createElement("td");
+    td.className = "acoes";
+
+    const docs = document.createElement("button");
+    docs.textContent = "Documentos";
+    docs.className = "documentos";
+    docs.onclick = () => abrirDocumentos(c);
+
+    const editar = document.createElement("button");
+    editar.textContent = "Editar";
+    editar.className = "editar";
+    editar.onclick = () => prepararEdicao(c);
+
+    const excluir = document.createElement("button");
+    excluir.textContent = "Excluir";
+    excluir.className = "excluir";
+    excluir.onclick = () => remover(c);
+
+    td.append(docs,editar,excluir);
+    tr.appendChild(td);
+    lista.appendChild(tr);
+  });
+}
+
+// RELATÓRIO POR DATA
+$("filtrar").onclick = () => {
+  const inicio = $("dataInicio").value;
+  const fim = $("dataFim").value;
+
+  if(inicio && fim && inicio > fim){
+    alert("A data inicial não pode ser posterior à data final.");
+    return;
+  }
+
+  dataInicial = inicio;
+  dataFinal = fim;
+
+  $("periodoTexto").textContent =
+    inicio || fim
+    ? "Exibindo clientes do período selecionado."
+    : "Exibindo todos os clientes.";
+
+  mostrar();
+};
+
+$("limparDatas").onclick = () => {
+  $("dataInicio").value = "";
+  $("dataFim").value = "";
+  dataInicial = "";
+  dataFinal = "";
+  $("periodoTexto").textContent = "Exibindo todos os clientes.";
+  mostrar();
+};
+
+// EXPORTAR EXCEL
+$("exportar").onclick = () => {
+  const encontrados = clientesFiltrados();
+
+  if(!encontrados.length){
+    alert("Não há clientes para exportar.");
+    return;
+  }
+
+  if(typeof XLSX === "undefined"){
+    alert("Não foi possível carregar o Excel. Verifique sua internet.");
+    return;
+  }
+
+  const dados = encontrados.map(c => ({
+    "Nome do cliente": c.nome,
+    "Unidade Consumidora": c.uc,
+    "Telefone": c.telefone || "",
+    "Data do cadastro": formatarData(c.created_at)
+  }));
+
+  const planilha = XLSX.utils.json_to_sheet(dados);
+  const livro = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(livro,planilha,"Clientes");
+
+  XLSX.writeFile(
+    livro,
+    dataInicial || dataFinal
+      ? "Relatorio_clientes_periodo.xlsx"
+      : "Relatorio_todos_clientes.xlsx"
+  );
+};
+
+// EDITAR CLIENTE
+function prepararEdicao(c){
+  editando = c.id;
+  $("nome").value = c.nome;
+  $("uc").value = c.uc;
+  $("telefone").value = c.telefone || "";
+  $("arquivosCadastro").value = "";
+
+  $("salvar").textContent = "Salvar alterações";
+  $("cancelar").style.display = "inline-block";
+
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+$("cancelar").onclick = () => {
+  editando = null;
+  $("formCliente").reset();
+  $("salvar").textContent = "Cadastrar cliente";
+  $("cancelar").style.display = "none";
+  $("mensagem").textContent = "";
+};
+
+// ENVIAR ARQUIVOS PARA A PASTA DO CLIENTE
+async function enviarArquivosDoCadastro(clienteId, arquivos){
+  if(!arquivos || !arquivos.length) return [];
+
+  const pasta = usuarioAtual.id + "/" + clienteId;
+  const erros = [];
+
+  for(const arquivo of arquivos){
+    if(arquivo.size > 20 * 1024 * 1024){
+      erros.push(arquivo.name + ": arquivo maior que 20 MB");
+      continue;
+    }
+
+    const nomeSeguro = arquivo.name.replace(/[^\w.\-() ]/g,"_");
+    const caminho = pasta + "/" + Date.now() + "_" + nomeSeguro;
+
+    const {error} = await db.storage
+      .from(BUCKET)
+      .upload(caminho,arquivo,{
+        cacheControl:"3600",
+        upsert:false
+      });
+
+    if(error) erros.push(arquivo.name + ": " + error.message);
+  }
+
+  return erros;
+}
+
+// CADASTRAR OU ATUALIZAR CLIENTE E ENVIAR ANEXOS
+$("formCliente").addEventListener("submit",async e => {
+  e.preventDefault();
+
+  const dados = {
+    nome:$("nome").value.trim(),
+    uc:$("uc").value.trim(),
+    telefone:$("telefone").value.trim()
+  };
+
+  const arquivosSelecionados = Array.from($("arquivosCadastro").files);
+
+  if(arquivosSelecionados.some(a => a.size > 20 * 1024 * 1024)){
+    $("mensagem").textContent = "Um ou mais arquivos ultrapassam o limite de 20 MB.";
+    return;
+  }
+
+  $("salvar").disabled = true;
+  $("mensagem").textContent = "Salvando cliente...";
+
+  let resultado;
+  let clienteId = editando;
+
+  if(editando){
+    resultado = await db.from("clientes")
+      .update({...dados,updated_at:new Date().toISOString()})
+      .eq("id",editando);
+  }else{
+    resultado = await db.from("clientes")
+      .insert({...dados,user_id:usuarioAtual.id})
+      .select("id")
+      .single();
+
+    if(!resultado.error && resultado.data){
+      clienteId = resultado.data.id;
+    }
+  }
+
+  if(resultado.error){
+    $("mensagem").textContent = "Erro ao salvar cliente: " + resultado.error.message;
+  }else{
+    let errosArquivos = [];
+
+    if(arquivosSelecionados.length){
+      $("mensagem").textContent = "Cliente salvo. Enviando documentos...";
+      errosArquivos = await enviarArquivosDoCadastro(clienteId,arquivosSelecionados);
+    }
+
+    if(errosArquivos.length){
+      $("mensagem").textContent =
+        "Cliente salvo, mas houve erro em alguns anexos: " + errosArquivos.join(" | ") +
+        ". Você poderá tentar novamente pelo botão Documentos.";
+    }else{
+      $("mensagem").textContent =
+        editando
+          ? "Cliente atualizado!" + (arquivosSelecionados.length ? " Documentos anexados!" : "")
+          : "Cliente cadastrado!" + (arquivosSelecionados.length ? " Documentos anexados!" : "");
+    }
+
+    $("formCliente").reset();
+    editando = null;
+    $("salvar").textContent = "Cadastrar cliente";
+    $("cancelar").style.display = "none";
+
+    await carregar();
+  }
+
+  $("salvar").disabled = false;
+});
+
+// EXCLUIR CLIENTE
+async function remover(c){
+  if(!confirm("Deseja excluir o cliente " + c.nome + "?")) return;
+
+  const {error} = await db.from("clientes")
+    .delete()
+    .eq("id",c.id);
+
+  if(error){
+    alert("Erro ao excluir: " + error.message);
+  }else{
+    await carregar();
+  }
+}
+
+// ABRIR DOCUMENTOS DO CLIENTE
+async function abrirDocumentos(c){
+  clienteDocumentos = c;
+
+  $("nomeClienteDocs").textContent =
+    c.nome + " | UC: " + c.uc;
+
+  $("arquivos").value = "";
+  $("mensagemDocs").textContent = "";
+  $("listaDocs").textContent = "Carregando documentos...";
+
+  $("modalDocs").style.display = "flex";
+
+  await carregarDocumentos();
+}
+
+// FECHAR JANELA
+function fecharDocumentos(){
+  $("modalDocs").style.display = "none";
+  clienteDocumentos = null;
+}
+
+$("fecharDocs").onclick = fecharDocumentos;
+
+$("modalDocs").addEventListener("click",e => {
+  if(e.target === $("modalDocs")) fecharDocumentos();
+});
+
+// CARREGAR DOCUMENTOS
+async function carregarDocumentos(){
+  if(!clienteDocumentos || !usuarioAtual) return;
+
+  const pasta =
+    usuarioAtual.id + "/" + clienteDocumentos.id;
+
+  const {data,error} = await db.storage
+    .from(BUCKET)
+    .list(pasta,{
+      limit:100,
+      sortBy:{column:"created_at",order:"desc"}
+    });
+
+  const lista = $("listaDocs");
+  lista.innerHTML = "";
+
+  if(error){
+    lista.textContent = "Erro ao consultar documentos: " + error.message;
+    return;
+  }
+
+  const arquivos = (data || []).filter(a => a.name);
+
+  if(!arquivos.length){
+    lista.textContent = "Nenhum documento anexado a este cliente.";
+    return;
+  }
+
+  arquivos.forEach(arquivo => {
+    const caminho = pasta + "/" + arquivo.name;
+
+    const linha = document.createElement("div");
+    linha.className = "arquivo";
+
+    const nome = document.createElement("div");
+    nome.className = "arquivo-nome";
+    nome.textContent = arquivo.name;
+
+    const botoes = document.createElement("div");
+    botoes.className = "acoes";
+
+    const baixar = document.createElement("button");
+    baixar.textContent = "Baixar";
+    baixar.onclick = () => baixarDocumento(caminho);
+
+    const excluir = document.createElement("button");
+    excluir.textContent = "Excluir";
+    excluir.className = "excluir";
+    excluir.onclick = () => excluirDocumento(caminho,arquivo.name);
+
+    botoes.append(baixar,excluir);
+    linha.append(nome,botoes);
+    lista.appendChild(linha);
+  });
+}
+
+// ENVIAR DOCUMENTOS
+$("enviarDocs").onclick = async () => {
+  if(!clienteDocumentos) return;
+
+  const arquivos = Array.from($("arquivos").files);
+
+  if(!arquivos.length){
+    alert("Selecione pelo menos um documento.");
+    return;
+  }
+
+  if(arquivos.some(a => a.size > 20 * 1024 * 1024)){
+    alert("Cada arquivo deve ter no máximo 20 MB.");
+    return;
+  }
+
+  $("enviarDocs").disabled = true;
+  $("mensagemDocs").textContent = "Enviando documentos...";
+
+  const pasta =
+    usuarioAtual.id + "/" + clienteDocumentos.id;
+
+  let erros = [];
+
+  for(const arquivo of arquivos){
+
+    const nomeSeguro = arquivo.name.replace(/[^\w.\-() ]/g,"_");
+    const caminho = pasta + "/" + Date.now() + "_" + nomeSeguro;
+
+    const {error} = await db.storage
+      .from(BUCKET)
+      .upload(caminho,arquivo,{
+        cacheControl:"3600",
+        upsert:false
+      });
+
+    if(error){
+      erros.push(arquivo.name + ": " + error.message);
+    }
+  }
+
+  $("enviarDocs").disabled = false;
+  $("arquivos").value = "";
+
+  if(erros.length){
+    $("mensagemDocs").textContent =
+      "Alguns arquivos não foram enviados: " + erros.join(" | ");
+  }else{
+    $("mensagemDocs").textContent = "Documentos enviados com sucesso!";
+  }
+
+  await carregarDocumentos();
+};
+
+// BAIXAR DOCUMENTO PRIVADO
+async function baixarDocumento(caminho){
+  const {data,error} = await db.storage
+    .from(BUCKET)
+    .createSignedUrl(caminho,60,{download:true});
+
+  if(error){
+    alert("Erro ao abrir documento: " + error.message);
+    return;
+  }
+
+  window.location.assign(data.signedUrl);
+}
+
+// EXCLUIR DOCUMENTO
+async function excluirDocumento(caminho,nome){
+  if(!confirm("Deseja excluir o documento " + nome + "?")) return;
+
+  const {error} = await db.storage
+    .from(BUCKET)
+    .remove([caminho]);
+
+  if(error){
+    alert("Erro ao excluir: " + error.message);
+    return;
+  }
+
+  $("mensagemDocs").textContent = "Documento excluído.";
+  await carregarDocumentos();
+}
+
+// PESQUISA
+$("pesquisa").addEventListener("input",mostrar);
+
+// SAIR
+$("sair").onclick = async () => {
+  await db.auth.signOut();
+  location.href = "index.html";
+};
+
+
+// MÓDULOS DE PROTOCOLOS E COMUNICADOS (mesmo login do sistema de clientes)
+const PROTOCOLOS_INICIAIS = [{"uc":"67208258","protocolo":"1069654165","contato":"POLO DO ELETRO COMERCIAL DE MOVEIS LTDA","servico":"LIGAÇÃO NOVA","os":"A010641575","data":"23/10/2026","prazo":"30/10/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"29/10/2026, 10:56:53"},{"uc":"1370989","protocolo":"1072371028","contato":"FRANCISCA DE SOUSA SILVA","servico":"ERRO DE LEITURA","os":"","data":"29/10/2026","prazo":"06/11/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"29/10/2026, 14:15:34"},{"uc":"67233819","protocolo":"1072218342","contato":"FRANCISCA CATARINA MONTEIRO GIFONI","servico":"TROCA DE TITULARIDADE","os":"A010700130","data":"29/10/2026","prazo":"06/11/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"29/10/2026, 13:58:13"},{"uc":"9101845","protocolo":"1072426400","contato":"MARIA CLEUDIENE DE LIMA MESQUITA","servico":"ENCERRAMENTO DE CONTRATO","os":"A010704703","data":"29/10/2026","prazo":"06/11/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"29/10/2026, 15:38:56"},{"uc":"66852890","protocolo":"1072198445","contato":"MARIA GILVANISE DE OLIVEIRA","servico":"BAIXA RENDA","os":"A010699544","data":"29/10/2026","prazo":"06/11/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"29/10/2026, 10:41:08"},{"uc":"67236103","protocolo":"1072392142","contato":"MARIA DAS GRACAS FERREIRA","servico":"TROCA DE TITULARIDADE","os":"A010703957","data":"29/10/2026","prazo":"06/11/2026","atendente":"Leandro Sousa","status":"Aprovado","av_marcado":false,"atualizado_em":"03/11/2026, 08:00:26"},{"uc":"8321149","protocolo":"1072415205","contato":"FRANCISCO RONER DOS SANTOS NASCIMENTO","servico":"RETIRADA DO FLAG","os":"","data":"29/10/2026","prazo":"09/11/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":true,"atualizado_em":"29/10/2026, 15:27:18"},{"uc":"7266016","protocolo":"1074144402","contato":"FRANCISCO ALAN MOREIRA DA SILVA","servico":"RETIRADA DO SPC","os":"A010738770","data":"03/11/2026","prazo":"03/12/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"03/11/2026, 10:28:40"},{"uc":"67208676","protocolo":"1069672314","contato":"SAULO JORGE GUIMARAES CORREIA","servico":"TROCA DE TITULARIDADE","os":"A010642507","data":"23/10/2026","prazo":"3 DIAS UTEIS","atendente":"LEANDRO SOUSA","status":"Aprovado","av_marcado":false,"atualizado_em":"28/10/2026, 12:37:26"},{"uc":"8773317","protocolo":"1069617338","contato":"FRANCILANE DE OLIVEIRA MAIA","servico":"CREDITO GERACAO DISTRIBUIDA","os":"A010641575","data":"23/10/2026","prazo":"5 DIAS UTEIS","atendente":"LEANDRO SOUSA","status":"Aprovado","av_marcado":false,"atualizado_em":"27/10/2026, 12:49:00"},{"uc":"67221778","protocolo":"1071162759","contato":"SAMARA NOBRE DA SILVA","servico":"TROCA DE TITULARIDADE","os":"A010675935","data":"27/10/2026","prazo":"5 DIAS UTEIS","atendente":"LEANDRO SOUSA","status":"Aprovado","av_marcado":false,"atualizado_em":"29/10/2026, 07:46:45"},{"uc":"9229389","protocolo":"1069599788","contato":"FRANCISCO MARCELO DE OLIVEIRA LIMA","servico":"CREDITO GERACAO DISTRIBUIDA","os":"A010641244","data":"23/10/2026","prazo":"5 DIAS UTEIS","atendente":"Leandro Sousa","status":"Aprovado","av_marcado":false,"atualizado_em":"27/10/2026, 12:45:29"}];
+let protocolos = [];
+let protocoloEditando = null;
+function abrirModulo(nome){
+  ['Clientes','Protocolos','Comunicados'].forEach(n=>{
+    const pane=$('aba'+n); if(pane) pane.hidden=n!==nome;
+    const btn=document.querySelector('[data-tab="'+n+'"]'); if(btn) btn.classList.toggle('ativa',n===nome);
+  });
+  if(nome==='Protocolos') renderizarProtocolos();
+  if(nome==='Comunicados') renderizarComunicados();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>abrirModulo(b.dataset.tab)));
+function parsePrazoBR(txt){const m=String(txt||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(!m)return null;const d=new Date(+m[3],+m[2]-1,+m[1],23,59,59);return Number.isNaN(d.getTime())?null:d;}
+function diasPrazo(d){const hoje=new Date();hoje.setHours(0,0,0,0);const alvo=new Date(d.getFullYear(),d.getMonth(),d.getDate());return Math.round((alvo-hoje)/86400000);}
+async function carregarProtocolos(){
+  $('p_vazio').textContent='Carregando protocolos...';
+  const {data,error}=await db.from('protocolos').select('*').order('created_at',{ascending:true});
+  if(error){$('p_vazio').textContent='Erro ao carregar protocolos: '+error.message;return;}
+  protocolos=data||[];
+  // Importação inicial automática e única: só ocorre se a tabela deste usuário estiver vazia.
+  if(protocolos.length===0 && PROTOCOLOS_INICIAIS.length){
+    const linhas=PROTOCOLOS_INICIAIS.map(p=>({uc:p.uc,protocolo:p.protocolo,contato:p.contato,servico:p.servico,os:p.os,data:p.data,prazo:p.prazo,atendente:p.atendente,status:p.status,av_marcado:!!p.av_marcado,user_id:usuarioAtual.id}));
+    const ins=await db.from('protocolos').insert(linhas).select('*');
+    if(ins.error){$('p_vazio').textContent='Não foi possível importar os 12 protocolos: '+ins.error.message;return;}
+    protocolos=ins.data||[];
+  }
+  renderizarProtocolos(); renderizarComunicados();
+}
+function protocolosFiltrados(){const q=$('p_busca').value.trim().toLocaleLowerCase('pt-BR');return protocolos.filter(p=>[p.protocolo,p.uc,p.contato,p.servico,p.os,p.atendente].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(q)));}
+function renderizarProtocolos(){
+ const lista=$('p_lista');if(!lista)return;const filtrados=protocolosFiltrados();lista.innerHTML='';
+ $('p_total').textContent=protocolos.length;$('p_pendentes').textContent=protocolos.filter(p=>p.status==='Pendente').length;$('p_aprovados').textContent=protocolos.filter(p=>p.status==='Aprovado').length;$('p_reprovados').textContent=protocolos.filter(p=>p.status==='Reprovado').length;
+ $('p_vazio').style.display=filtrados.length?'none':'block';if(!filtrados.length)$('p_vazio').textContent='Nenhum protocolo encontrado.';
+ filtrados.forEach(p=>{const tr=document.createElement('tr');const vals=[p.protocolo,p.uc,p.contato,p.servico];vals.forEach((v,i)=>{const td=document.createElement('td');td.textContent=String(v||'');if(i===0&&p.av_marcado){const tag=document.createElement('span');tag.className='p-av';tag.textContent='A/V';td.prepend(tag);}tr.appendChild(td);});const st=document.createElement('td');st.textContent=p.status||'Pendente';st.className='p-status p-'+String(p.status||'Pendente').toLowerCase();tr.appendChild(st);const ac=document.createElement('td');ac.className='p-actions';const ed=document.createElement('button');ed.type='button';ed.textContent='Abrir';ed.className='p-edit';ed.onclick=()=>editarProtocolo(p);const del=document.createElement('button');del.type='button';del.textContent='Excluir';del.className='p-del';del.onclick=()=>excluirProtocolo(p);ac.append(ed,del);tr.appendChild(ac);lista.appendChild(tr);});
+}
+function editarProtocolo(p){protocoloEditando=p.id;[['uc','uc'],['protocolo','protocolo'],['contato','contato'],['servico','servico'],['os','os'],['data','data'],['prazo','prazo'],['atendente','atendente'],['status','status']].forEach(([id,k])=>$('p_'+id).value=p[k]||'');$('p_av').checked=!!p.av_marcado;$('p_salvar').textContent='Salvar alterações';$('p_cancelar').hidden=false;abrirModulo('Protocolos');window.scrollTo({top:0,behavior:'smooth'});}
+$('formProtocolo').addEventListener('submit',async e=>{e.preventDefault();const p={uc:$('p_uc').value.trim(),protocolo:$('p_protocolo').value.trim(),contato:$('p_contato').value.trim(),servico:$('p_servico').value.trim(),os:$('p_os').value.trim(),data:$('p_data').value.trim(),prazo:$('p_prazo').value.trim(),atendente:$('p_atendente').value.trim(),status:$('p_status').value,av_marcado:$('p_av').checked};if(!p.protocolo){alert('Informe o número do protocolo.');return;}const duplicado=protocolos.find(x=>String(x.protocolo)===p.protocolo&&x.id!==protocoloEditando);if(duplicado){alert('Já existe um protocolo com esse número.');return;}$('p_salvar').disabled=true;$('p_msg').textContent='Salvando...';let res;if(protocoloEditando)res=await db.from('protocolos').update(p).eq('id',protocoloEditando).select().single();else res=await db.from('protocolos').insert({...p,user_id:usuarioAtual.id}).select().single();$('p_salvar').disabled=false;if(res.error){$('p_msg').textContent='Erro: '+res.error.message;return;}if(protocoloEditando)protocolos=protocolos.map(x=>x.id===protocoloEditando?res.data:x);else protocolos.unshift(res.data);limparFormProtocolo();renderizarProtocolos();renderizarComunicados();$('p_msg').textContent='Protocolo salvo com sucesso.';});
+function limparFormProtocolo(){protocoloEditando=null;$('formProtocolo').reset();$('p_salvar').textContent='Cadastrar protocolo';$('p_cancelar').hidden=true;}
+$('p_cancelar').onclick=limparFormProtocolo;
+async function excluirProtocolo(p){if(!confirm('Excluir o protocolo '+p.protocolo+'?'))return;const {error}=await db.from('protocolos').delete().eq('id',p.id);if(error){alert('Erro ao excluir: '+error.message);return;}protocolos=protocolos.filter(x=>x.id!==p.id);renderizarProtocolos();renderizarComunicados();}
+$('p_busca').addEventListener('input',renderizarProtocolos);
+$('p_excel').onclick=()=>{if(typeof XLSX==='undefined'){alert('Excel indisponível.');return;}const linhas=protocolos.map(p=>({'A/V':p.av_marcado?'A/V':'','UC':p.uc,'Nº do Protocolo':p.protocolo,'Nome do Contato':p.contato,'Serviço Solicitado':p.servico,'Nº da Ordem de Serviço':p.os,'Data/Hora da Solicitação':p.data,'Prazo de Resposta':p.prazo,'Atendente':p.atendente,'Status':p.status}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(linhas),'Protocolos');XLSX.writeFile(wb,'Relatorio_Protocolos.xlsx');};
+function renderizarComunicados(){const el=$('comunicadosLista');if(!el)return;const agora=new Date();const pendentes=protocolos.filter(p=>(p.status||'Pendente').toLowerCase()==='pendente').map(p=>({p,fim:parsePrazoBR(p.prazo)})).sort((a,b)=>{if(!!a.p.av_marcado!==!!b.p.av_marcado)return a.p.av_marcado?-1:1;if(!a.fim&&!b.fim)return 0;if(!a.fim)return 1;if(!b.fim)return -1;return a.fim-b.fim;});el.innerHTML='';if(!pendentes.length){el.textContent='Nenhum protocolo pendente no momento.';return;}pendentes.forEach(({p,fim})=>{const b=document.createElement('button');b.type='button';b.className='comunicado-card'+(fim&&fim<agora?' vencido':'')+(p.av_marcado?' av':'');const strong=document.createElement('strong');strong.textContent=(p.av_marcado?'A/V • ':'')+'Protocolo '+p.protocolo;const line=document.createElement('span');line.textContent=(p.contato||'Contato não informado')+' • UC '+(p.uc||'—');const tipo=document.createElement('span');tipo.textContent=p.servico||'Serviço não informado';const prazo=document.createElement('span');let msg='Prazo não informado';if(fim){const d=diasPrazo(fim);msg=d<0?'Prazo vencido há '+Math.abs(d)+' dia(s)':d===0?'Vence hoje':d===1?'Falta 1 dia para finalizar':'Faltam '+d+' dias para finalizar';}prazo.textContent=(p.prazo?'Prazo: '+p.prazo+' — ':'')+msg;b.append(strong,line,tipo,prazo);b.onclick=()=>editarProtocolo(p);el.appendChild(b);});}
+
+// INICIAR
+(async()=>{await iniciar(); if(usuarioAtual) await carregarProtocolos();})();
+
+</script>
+</body>
+</html>
