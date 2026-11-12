@@ -1,0 +1,1407 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistema de Clientes</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23102f53'/%3E%3Cpath d='M36 6 15 36h14l-3 22 23-32H34z' fill='%2300d4a6' stroke='white' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f4f8;color:#243247}
+header{background:#102f53;color:white;padding:20px}
+header h2{margin:0}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:12px}
+main{max-width:1150px;margin:25px auto;padding:15px}
+.card{background:white;padding:22px;border-radius:12px;margin-bottom:20px;box-shadow:0 3px 12px #0000000c}
+h3{color:#153b63;margin-top:0}
+label{display:block;font-weight:bold;margin-bottom:5px}
+input{width:100%;padding:12px;border:1px solid #ccd5df;border-radius:7px;margin:7px 0 14px;font-size:15px}
+button{padding:11px 16px;border:0;border-radius:7px;background:#164b7e;color:white;cursor:pointer;font-weight:bold}
+button:disabled{opacity:.6;cursor:wait}
+.acoes{display:flex;gap:6px;flex-wrap:wrap}
+.excluir{background:#a52b2b}
+.editar{background:#39734a}
+.documentos{background:#7650a5}
+.excel{background:#187747}
+.limpar{background:#687789}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:12px;border-bottom:1px solid #e5eaf0}
+th{background:#f5f7fa}
+.resumo{display:flex;gap:12px;flex-wrap:wrap;margin:15px 0}
+.numero{background:#edf4fb;padding:16px;border-radius:9px;flex:1;min-width:160px}
+.numero strong{display:block;font-size:27px;color:#164b7e;margin-top:6px}
+#mensagem{color:#164b7e}
+.modal{display:none;position:fixed;inset:0;background:#0009;z-index:10;align-items:center;justify-content:center;padding:15px}
+.modal-conteudo{background:white;width:100%;max-width:650px;max-height:90vh;overflow:auto;border-radius:12px;padding:22px}
+.arquivo{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #e5eaf0;overflow-wrap:anywhere}
+.arquivo-nome{flex:1}
+.pequeno{font-size:12px;color:#687789}
+.fechar{background:#687789}
+#mensagemDocs{color:#164b7e}
+@media(max-width:600px){
+ table{font-size:12px}
+ th,td{padding:7px}
+ .topo{align-items:flex-start}
+ .arquivo{align-items:flex-start;flex-direction:column}
+ main{padding:10px;margin:10px auto}
+ .card{padding:15px}
+ .acoes button,.tabs button{flex:1 1 auto}
+ .resumo .numero{min-width:calc(50% - 8px)}
+ .comunicados-prazos-antigo{margin:10px;padding:12px}
+ .lista-antiga table{min-width:700px}
+}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tabs button{background:#e7eef7;color:#173b61;border:1px solid #cfdae8}
+.tabs button.ativa{background:#102f53;color:#fff}
+.tab-pane[hidden]{display:none!important}
+.protocolos-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.protocolos-top input{flex:1;min-width:220px}
+.protocolos-stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.protocolos-stats .numero{min-width:120px}
+.protocolos-stats strong{font-size:23px}
+.p-status{font-weight:bold}.p-pendente{color:#a86400}.p-aprovado{color:#16803b}.p-reprovado{color:#b42323}
+.p-av{display:inline-block;background:#fff0c2;color:#8b5b00;border:1px solid #e2b44e;border-radius:5px;padding:2px 5px;font-size:11px;font-weight:bold;margin-right:5px}
+.p-actions{display:flex;gap:5px;flex-wrap:wrap}.p-actions button{padding:7px 10px}.p-edit{background:#dceafe;color:#174a86}.p-del{background:#b42323}
+.p-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.p-form label{font-size:13px}.p-form input,.p-form select{margin:6px 0 10px}
+.comunicado-card{border:1px solid #ead9a4;background:#fff9e8;border-radius:10px;padding:13px;margin:9px 0;cursor:pointer;text-align:left;color:#584300;width:100%}
+.comunicado-card.vencido{border-color:#e9aaa5;background:#fff0ef;color:#8c211a}
+.comunicado-card.av{border:2px solid #d18b00;background:#fff5d9}
+.comunicado-card strong,.comunicado-card span{display:block;margin:3px 0}.comunicado-card span{font-size:13px}
+@media(max-width:650px){.protocolos-top{align-items:stretch}.protocolos-top input{min-width:100%}}
+
+
+/* Restauração do visual anterior da área de Protocolos */
+.protocolos-topo-antigo{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.busca-wrap-antigo{position:relative;flex:1 1 320px;min-width:220px}
+.busca-antigo{width:100%;box-sizing:border-box;margin:0;padding:12px 42px;border:1px solid #d4dde8;border-radius:10px;background:#fff;color:#172b43;font-size:14px;outline:none}
+.busca-antigo:focus{border-color:#3778bd;box-shadow:0 0 0 3px rgba(55,120,189,.13)}
+.busca-icone-antigo{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#64748b;font-size:17px}
+.btn-limpar-antigo{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;border-radius:6px;background:transparent;color:#64748b;padding:5px 7px;display:none;font-size:18px;line-height:1}
+.btn-limpar-antigo.visivel{display:block}
+.btn-pesquisar-antigo{border:1px solid #0a2745;border-radius:10px;padding:11px 15px;background:#0a2745;color:#fff;font-weight:700;white-space:nowrap}
+.btn-novo-protocolo{background:#167347;color:#fff}
+.contador-antigo{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.contador-antigo span{background:#fff;border:1px solid #e1e5e3;box-shadow:0 3px 10px rgba(0,0,0,.04);padding:10px 13px;border-radius:8px;font-size:12px}
+.contador-antigo strong{font-size:18px;color:#173b61;margin-left:5px}
+.lista-antiga{overflow-x:auto;border:1px solid #e3e8ed;border-radius:9px}
+.lista-antiga table{min-width:760px;width:100%;border-collapse:collapse}
+.lista-antiga th{background:#f4f7f8;color:#243b53;position:relative;white-space:nowrap}
+.lista-antiga td,.lista-antiga th{padding:12px;border-bottom:1px solid #e7ecef}
+.titulo-filtro-antigo{display:inline-flex;align-items:center;gap:7px;border:0;padding:2px 0;margin:0;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer}
+.filtro-coluna-antigo{position:absolute;z-index:30;top:calc(100% - 2px);left:8px;min-width:190px;display:flex;align-items:center;gap:6px;padding:9px;background:#fff;border:1px solid #d8e1eb;border-radius:9px;box-shadow:0 8px 24px rgba(15,35,60,.16)}
+.filtro-coluna-antigo[hidden]{display:none!important}
+.filtro-coluna-antigo input,.filtro-coluna-antigo select{width:100%;min-width:0;box-sizing:border-box;border:1px solid #d6e0ea;border-radius:6px;padding:7px 8px;background:#fff;color:#172b43;font-size:12px;margin:0}
+.filtro-coluna-antigo button{border:0;border-radius:6px;padding:7px 8px;background:#eef3f8;color:#29445f;font-size:12px;white-space:nowrap}
+.vazio-antigo{padding:15px;color:#667784;font-size:13px}
+.p-acoes-antigas{display:flex;gap:6px;white-space:nowrap}
+.p-acoes-antigas button{padding:7px 10px;font-size:12px}
+#formProtocoloCard[hidden]{display:none!important}
+.comunicados-prazos-antigo{position:fixed;right:18px;top:150px;width:285px;max-height:calc(100vh - 175px);overflow:auto;z-index:40;background:#fff;border:1px solid #d9e2e7;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.10);padding:14px;box-sizing:border-box}
+.comunicados-prazos-antigo h3{margin:0 0 4px;font-size:16px;color:#16324a;text-align:center}
+.comunicados-prazos-antigo .comunicados-sub{margin:0 0 10px;font-size:11px;color:#667784;text-align:center}
+.comunicado-card{width:100%;text-align:left;border:1px solid #f0d58a;background:#fff9e8;color:#5c4500;padding:10px;margin:0 0 8px;border-radius:10px;font-weight:normal;cursor:pointer}
+.comunicado-card:hover{background:#fff3c9}
+.comunicado-card.vencido{border-color:#efb0aa;background:#fff0ef;color:#8b1e16}
+.comunicado-card.av{border:3px solid #d18b00;background:#fff7dc;box-shadow:0 0 0 2px rgba(209,139,0,.12),0 5px 14px rgba(209,139,0,.16)}
+.comunicado-card.av::before{content:'A/V — VERIFICAÇÃO';display:block;margin:-4px -4px 8px;padding:5px 7px;border-radius:7px;background:#d18b00;color:#fff;font-size:10px;font-weight:900;letter-spacing:.3px;text-align:center}
+.comunicado-card strong{display:block;font-size:12px;margin-bottom:3px}
+.comunicado-card span{display:block;font-size:11px;line-height:1.35;margin-top:3px}
+.comunicado-card .comunicado-av{display:inline-block;margin-left:6px;padding:2px 5px;border-radius:5px;background:#d18b00;color:#fff;font-size:9px;font-weight:800}
+.comunicados-vazio-antigo{font-size:12px;color:#60717d;background:#f4f7f8;border-radius:9px;padding:10px}
+@media(min-width:1101px){body.autenticado main{max-width:1050px;width:min(1050px,calc(100vw - 345px));margin-left:auto;margin-right:323px}body.autenticado .comunicados-prazos-antigo{right:18px;top:150px;width:285px}}
+@media(max-width:1100px){.comunicados-prazos-antigo{position:static;width:auto;max-width:1050px;max-height:none;margin:12px auto;padding:14px}body.autenticado main{width:auto;max-width:1050px;margin-left:auto;margin-right:auto}}
+body:not(.autenticado) .comunicados-prazos-antigo{display:none!important}
+@media print{.comunicados-prazos-antigo{display:none!important}}
+
+
+
+/* Consulta estimada de potência por equipamento */
+.potencia-card{max-width:760px;margin:18px auto;padding:24px;border:1px solid #dce4ed;border-radius:14px;background:#fff;box-shadow:0 6px 20px #102f5310}
+.potencia-card h3{margin:0 0 8px;color:#173b5e}.potencia-card .sub{color:#617286;font-size:13px;margin:0 0 20px;line-height:1.5}
+.potencia-busca{display:flex;gap:10px;align-items:center}
+.potencia-busca input{box-sizing:border-box;flex:1;min-width:0;padding:13px;border:1px solid #cfd8e3;border-radius:8px;background:#fff;font-size:16px;margin:0}
+.potencia-busca button{white-space:nowrap}
+.potencia-resultado{background:#f2f7fb;border:1px solid #e0eaf3;border-radius:10px;padding:18px;margin-top:18px;color:#173b5e;min-height:90px}
+.potencia-resultado strong{font-size:27px;display:block;margin:5px 0}
+.potencia-faixa{font-size:14px;color:#526579;margin-top:5px}
+.potencia-formula{font-size:12px;color:#68798b;margin-top:14px;line-height:1.5}
+.potencia-exemplos{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.potencia-exemplos button{background:#edf4fb;color:#174a76;border:1px solid #d8e5f1;padding:8px 11px;font-size:12px}
+@media(max-width:600px){.potencia-busca{align-items:stretch;flex-direction:column}.potencia-busca button{width:100%}}
+
+/* Biblioteca de formulários */
+.formularios-hero{background:linear-gradient(135deg,#102f53,#176b70);color:#fff;border-radius:16px;padding:22px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;box-shadow:0 8px 22px #102f5322}
+.formularios-hero h3{color:#fff;margin:0 0 6px;font-size:21px}.formularios-hero p{margin:0;color:#e1f1f2;font-size:13px;max-width:580px;line-height:1.5}
+.formularios-hero .hero-icone{font-size:42px;opacity:.95}
+.form-upload-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
+.form-upload-grid label{font-size:13px;color:#29445f}
+.form-upload-grid input,.form-upload-grid select{width:100%;padding:11px;border:1px solid #d5dee8;border-radius:9px;margin:6px 0 12px;background:#fff}
+.form-upload-grid .full{grid-column:1/-1}
+.form-upload-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.form-upload-actions button{background:#13734d}
+.form-search-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.form-search-row input{flex:1;min-width:220px;margin:0}
+.form-search-row select{padding:11px;border:1px solid #ccd5df;border-radius:8px;background:#fff}
+.form-count{font-size:12px;color:#607286;margin:8px 0 14px}
+.form-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:13px}
+.form-file-card{border:1px solid #e0e7ef;border-radius:13px;background:#fff;padding:15px;box-shadow:0 3px 12px #102f5309;display:flex;flex-direction:column;min-height:190px}
+.form-file-top{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+.form-file-icon{width:42px;height:46px;border-radius:9px;background:#edf4fb;color:#164b7e;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0}
+.form-file-card h4{font-size:14px;color:#183b5c;margin:0;overflow-wrap:anywhere}
+.form-file-card .form-desc{font-size:12px;color:#657588;line-height:1.45;margin:0 0 10px;overflow-wrap:anywhere}
+.form-file-meta{font-size:11px;color:#7a8796;margin-top:auto;padding-top:8px}
+.form-file-actions{display:flex;gap:7px;margin-top:11px}
+.form-file-actions button{flex:1;padding:9px 8px;font-size:12px}
+.form-download{background:#164b7e}.form-delete{background:#fbeaea;color:#a52b2b}
+.form-tag{display:inline-block;background:#edf5f1;color:#176347;padding:4px 7px;border-radius:20px;font-size:10px;font-weight:700;margin-bottom:8px;align-self:flex-start}
+.form-empty{border:1px dashed #cbd7e3;border-radius:12px;padding:28px;text-align:center;color:#718096;background:#f9fbfd;grid-column:1/-1}
+#formMensagem{font-size:13px;color:#164b7e;margin:10px 0 0}
+@media(max-width:650px){.form-upload-grid{grid-template-columns:1fr}.form-upload-grid .full{grid-column:auto}.formularios-hero{padding:17px}.formularios-hero .hero-icone{display:none}.form-search-row input{min-width:100%}}
+
+/* Indicadores, histórico e backup */
+.dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:14px 0 20px}
+.dashboard-item{background:#fff;border:1px solid #e1e8ef;border-radius:11px;padding:13px;box-shadow:0 2px 8px #102f5308}
+.dashboard-item span{display:block;font-size:12px;color:#65758a}
+.dashboard-item strong{display:block;font-size:25px;color:#164b7e;margin-top:5px}
+.dashboard-item.alerta strong{color:#b42323}.dashboard-item.atencao strong{color:#a86400}
+.gestao-acoes{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}
+.gestao-nota{font-size:12px;color:#667789;line-height:1.5}
+.historico-tabela{overflow-x:auto;border:1px solid #e1e8ef;border-radius:9px}
+.historico-tabela table{min-width:620px}
+.sql-config{width:100%;min-height:190px;font-family:Consolas,monospace;font-size:12px;white-space:pre;}
+.status-config{font-size:13px;padding:10px;border-radius:8px;background:#f2f6fa;color:#43566b}
+#docsBusca{margin:12px 0;width:100%}
+@media(max-width:600px){.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-item strong{font-size:22px}.gestao-acoes button{width:100%}}
+
+/* Organização do gerador de observações */
+.observacao-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:20px;row-gap:5px;align-items:start;margin-top:18px}
+.observacao-grid>div{min-width:0}
+.observacao-grid .full{grid-column:1/-1}
+.observacao-grid label{margin:0 0 6px;line-height:1.35}
+.observacao-grid input,.observacao-grid select{display:block;width:100%;min-height:43px;margin:0 0 14px;padding:10px 12px}
+.observacao-portaria{min-height:43px;display:flex;align-items:center;padding:10px 12px;margin:0 0 14px;border:1px solid #d8e0e9;border-radius:7px;background:#f5f7fa;color:#34465b;font-weight:600}
+@media(max-width:600px){.observacao-grid{grid-template-columns:1fr;row-gap:0}.observacao-grid .full{grid-column:auto}}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="topo">
+<div>
+<h2>Cadastro de Clientes</h2>
+<p>Painel administrativo</p>
+</div>
+<button id="sair">Sair</button>
+</div>
+</header>
+
+<main>
+<nav class="tabs" aria-label="Módulos do sistema"><button type="button" class="ativa" data-tab="Clientes">Clientes</button><button type="button" data-tab="Protocolos">Protocolos</button><button type="button" data-tab="Formularios">Formulários</button><button type="button" data-tab="Potencia">Potência</button><button type="button" data-tab="Observacoes">Gerar Observação</button><button type="button" data-tab="Gestao">Histórico e backup</button></nav>
+
+<section class="card" id="painelIndicadores">
+  <h3>Visão geral</h3>
+  <div class="dashboard-grid">
+    <div class="dashboard-item"><span>Clientes cadastrados</span><strong id="dashClientes">0</strong></div>
+    <div class="dashboard-item"><span>Protocolos cadastrados</span><strong id="dashProtocolos">0</strong></div>
+    <div class="dashboard-item atencao"><span>Protocolos pendentes</span><strong id="dashPendentes">0</strong></div>
+    <div class="dashboard-item"><span>Protocolos aprovados</span><strong id="dashAprovados">0</strong></div>
+    <div class="dashboard-item alerta"><span>Protocolos vencidos</span><strong id="dashVencidos">0</strong></div>
+    <div class="dashboard-item atencao"><span>Vencem em até 7 dias</span><strong id="dashProximos">0</strong></div>
+  </div>
+  <p class="gestao-nota">Os indicadores são atualizados conforme os dados carregados do sistema.</p>
+</section>
+
+<div id="abaClientes" class="tab-pane">
+<section class="card">
+<h3>Novo cliente</h3>
+
+<form id="formCliente">
+<div class="grid">
+
+<div>
+<label>Nome do cliente</label>
+<input id="nome" required placeholder="Nome completo">
+</div>
+
+<div>
+<label>Unidade Consumidora (UC)</label>
+<input id="uc" required placeholder="Número da UC">
+</div>
+
+<div>
+<label>Telefone</label>
+<input id="telefone" type="tel" maxlength="15"
+placeholder="(88) 99999-9999">
+</div>
+
+<div>
+<label>Anexar documentos do cliente</label>
+<input id="arquivosCadastro" type="file" multiple
+accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+
+</div>
+
+</div>
+
+<button id="salvar" type="submit">Cadastrar cliente</button>
+<button type="button" id="cancelar" class="limpar"
+style="display:none">Cancelar edição</button>
+</form>
+
+<p id="mensagem"></p>
+</section>
+
+<section class="card">
+<h3>Relatório de clientes por data</h3>
+
+<div class="grid">
+<div>
+<label>Data inicial</label>
+<input type="date" id="dataInicio">
+</div>
+<div>
+<label>Data final</label>
+<input type="date" id="dataFim">
+</div>
+</div>
+
+<div class="acoes">
+<button id="filtrar">Consultar período</button>
+<button id="limparDatas" class="limpar">Limpar datas</button>
+<button id="exportar" class="excel">Exportar Excel</button>
+</div>
+
+<div class="resumo">
+<div class="numero">
+Clientes no período
+<strong id="totalPeriodo">0</strong>
+</div>
+<div class="numero">
+Total geral
+<strong id="totalGeral">0</strong>
+</div>
+</div>
+
+<p id="periodoTexto">Exibindo todos os clientes.</p>
+</section>
+
+<section class="card">
+<h3>Clientes cadastrados</h3>
+
+<input id="pesquisa" type="search"
+placeholder="Buscar cliente por nome, UC ou telefone..." aria-label="Buscar cliente por nome, unidade consumidora ou telefone">
+
+<div style="overflow-x:auto">
+<table>
+<thead>
+<tr>
+<th>Nome</th>
+<th>UC</th>
+<th>Telefone</th>
+<th>Data do cadastro</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="lista"></tbody>
+</table>
+</div>
+
+<p id="vazio">Carregando clientes...</p>
+</section>
+
+</div>
+
+<div id="abaProtocolos" class="tab-pane" hidden>
+<section class="card" id="formProtocoloCard" hidden>
+<h3 id="tituloFormProtocolo">Cadastrar protocolo</h3>
+<form id="formProtocolo">
+<div class="p-form">
+<label>UC (Unidade Consumidora)<input id="p_uc"></label>
+<label>Nº do Protocolo *<input id="p_protocolo" required></label>
+<label>Nome do Contato<input id="p_contato"></label>
+<label>Tipo da Solicitação<input id="p_servico"></label>
+<label>Nº da Ordem de Serviço<input id="p_os"></label>
+<label>Data/Hora da Solicitação<input id="p_data" placeholder="DD/MM/AAAA HH:MM"></label>
+<label>Prazo de Resposta<input id="p_prazo" placeholder="DD/MM/AAAA ou prazo em dias"></label>
+<label>Atendente<input id="p_atendente"></label>
+<label>Status<select id="p_status"><option>Pendente</option><option>Aprovado</option><option>Reprovado</option></select></label>
+<label style="display:flex;align-items:center;gap:8px"><input id="p_av" type="checkbox" style="width:auto;margin:0"> Marcar A/V</label>
+</div>
+<div class="acoes"><button id="p_salvar" type="submit">Cadastrar protocolo</button><button id="p_cancelar" type="button" class="limpar" hidden>Cancelar edição</button><button id="p_fecharForm" type="button" class="limpar">Fechar</button></div>
+<p id="p_msg"></p>
+</form>
+</section>
+<section class="card">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h3 style="margin:0">Protocolos</h3><button type="button" class="btn-novo-protocolo" id="p_novo">+ Novo protocolo</button></div>
+<div class="protocolos-topo-antigo" style="margin-top:16px">
+<div class="busca-wrap-antigo"><span class="busca-icone-antigo" aria-hidden="true">⌕</span><input id="p_busca" class="busca-antigo" type="search" placeholder="Pesquisar" aria-label="Pesquisar protocolos"><button type="button" id="p_limparBusca" class="btn-limpar-antigo" title="Limpar pesquisa">×</button></div>
+<button type="button" class="btn-pesquisar-antigo" id="p_pesquisar">Pesquisar</button><select id="p_prazoFiltro" aria-label="Filtrar protocolos por prazo" style="padding:10px;border:1px solid #d4dde8;border-radius:9px;background:#fff"><option value="">Todos os prazos</option><option value="vencido">Prazo vencido</option><option value="hoje">Vence hoje</option><option value="7dias">Próximos 7 dias</option><option value="semdata">Sem data calculável</option></select><button id="p_excel" class="excel" type="button">Exportar Excel</button>
+</div>
+<div class="contador-antigo" id="p_contador"></div>
+<div class="lista-antiga"><table><thead><tr>
+<th><button type="button" class="titulo-filtro-antigo" data-filtro="protocolo">Protocolo <span>⌄</span></button><div class="filtro-coluna-antigo" data-filtro-coluna="protocolo" hidden><input type="text" placeholder="Filtrar protocolo..."><button type="button" data-limpar-filtro="protocolo">Limpar</button></div></th>
+<th>UC (Unidade Consumidora)</th>
+<th><button type="button" class="titulo-filtro-antigo" data-filtro="contato">Contato <span>⌄</span></button><div class="filtro-coluna-antigo" data-filtro-coluna="contato" hidden><input type="text" placeholder="Filtrar contato..."><button type="button" data-limpar-filtro="contato">Limpar</button></div></th>
+<th><button type="button" class="titulo-filtro-antigo" data-filtro="servico">Tipo da Solicitação <span>⌄</span></button><div class="filtro-coluna-antigo" data-filtro-coluna="servico" hidden><input type="text" placeholder="Filtrar tipo..."><button type="button" data-limpar-filtro="servico">Limpar</button></div></th>
+<th><button type="button" class="titulo-filtro-antigo" data-filtro="status">Status <span>⌄</span></button><div class="filtro-coluna-antigo" data-filtro-coluna="status" hidden><select aria-label="Filtrar status"><option value="">Todos</option><option>Pendente</option><option>Aprovado</option><option>Reprovado</option></select><button type="button" data-limpar-filtro="status">Limpar</button></div></th>
+<th>Ações</th></tr></thead><tbody id="p_lista"></tbody></table></div><p id="p_vazio" class="vazio-antigo">Carregando protocolos...</p>
+</section>
+</div>
+
+<div id="abaFormularios" class="tab-pane" hidden>
+  <section class="formularios-hero">
+    <div><h3>Central de Formulários</h3><p>Guarde aqui os formulários e documentos usados nos procedimentos da empresa. Ficam salvos na nuvem e disponíveis quando você acessar o sistema em outro computador.</p></div>
+    <div class="hero-icone" aria-hidden="true">📁</div>
+  </section>
+  <section class="card">
+    <h3>Adicionar formulário</h3>
+    <form id="formUploadFormulario">
+      <div class="form-upload-grid">
+        <div><label for="f_titulo">Nome do formulário *</label><input id="f_titulo" required maxlength="120" placeholder="Ex.: Solicitação de ressarcimento"></div>
+        <div><label for="f_categoria">Categoria</label><select id="f_categoria"><option value="Geral">Geral</option><option>Atendimento</option><option>Ressarcimento</option><option>Ligação nova</option><option>Troca de titularidade</option><option>Reclamação</option><option>Procedimentos internos</option><option>Outros</option></select></div>
+        <div class="full"><label for="f_descricao">Descrição (opcional)</label><input id="f_descricao" maxlength="240" placeholder="Uma observação para lembrar quando usar este arquivo"></div>
+        <div class="full"><label for="f_arquivo">Arquivo *</label><input id="f_arquivo" type="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.xlsm,.ppt,.pptx,.odt,.ods,.jpg,.jpeg,.png"></div>
+      </div>
+      <div class="form-upload-actions"><button id="f_enviar" type="submit">↑ Salvar na biblioteca</button><span class="pequeno">PDF, Word, Excel, PowerPoint ou imagem. Limite de 20 MB por arquivo.</span></div>
+      <p id="formMensagem"></p>
+    </form>
+  </section>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Minha biblioteca</h3><span class="pequeno" id="f_total">Carregando...</span></div>
+    <div class="form-search-row" style="margin-top:15px"><input id="f_busca" type="search" placeholder="Pesquisar por nome, categoria ou descrição..."><select id="f_filtroCategoria" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option><option>Atendimento</option><option>Ressarcimento</option><option>Ligação nova</option><option>Troca de titularidade</option><option>Reclamação</option><option>Procedimentos internos</option><option>Outros</option><option>Geral</option></select></div>
+    <div id="f_lista" class="form-cards"><div class="form-empty">Carregando sua biblioteca...</div></div>
+  </section>
+</div>
+
+<div id="abaGestao" class="tab-pane" hidden>
+  <section class="card">
+    <h3>Backup e segurança</h3>
+    <p>Gere uma cópia dos registros de clientes, protocolos e da biblioteca de formulários. Guarde o arquivo em local seguro.</p>
+    <div class="gestao-acoes"><button type="button" id="baixarBackup" class="excel">Baixar backup dos cadastros (JSON)</button><button type="button" id="atualizarHistorico" class="limpar">Atualizar histórico</button></div>
+    <p class="gestao-nota">O backup inclui os dados cadastrados e os metadados dos formulários. Os arquivos anexados (PDFs, fotos e documentos) permanecem no armazenamento privado do Supabase e não são incorporados ao JSON. Este recurso exporta uma cópia; não restaura nem substitui dados automaticamente.</p>
+    <p id="backupStatus" class="status-config" aria-live="polite">Backup disponível após carregar os dados.</p>
+  </section>
+  <section class="card">
+    <h3>Histórico de alterações</h3>
+    <p class="gestao-nota">Registra novos cadastros, edições e exclusões feitos depois que o histórico estiver configurado. Os registros são privados por usuário.</p>
+    <div class="gestao-acoes"><button type="button" id="mostrarSqlHistorico" class="limpar">Configurar histórico no Supabase</button></div>
+    <div id="historicoStatus" class="status-config">Verificando disponibilidade do histórico...</div>
+    <div class="historico-tabela" style="margin-top:12px"><table><thead><tr><th>Data e hora</th><th>Ação</th><th>Área</th><th>Detalhes</th></tr></thead><tbody id="historicoLista"><tr><td colspan="4">Nenhum registro carregado.</td></tr></tbody></table></div>
+    <div id="historicoSqlArea" hidden style="margin-top:14px">
+      <label for="historicoSql">SQL de configuração (executar uma única vez no SQL Editor do Supabase)</label>
+      <textarea id="historicoSql" class="sql-config" readonly></textarea>
+      <button type="button" id="copiarHistoricoSql">Selecionar SQL para copiar</button>
+      <p class="gestao-nota">A configuração cria uma tabela de auditoria com políticas para cada usuário visualizar e inserir somente os próprios registros. Não altera nem apaga clientes ou protocolos.</p>
+    </div>
+  </section>
+</div>
+</main>
+
+<aside id="comunicados-prazos" class="comunicados-prazos-antigo" aria-live="polite"><h3>Comunicados</h3><p class="comunicados-sub">Protocolos pendentes organizados por prazo</p><div id="comunicadosLista"><div class="comunicados-vazio-antigo">Carregando pendências...</div></div></aside>
+
+
+<!-- JANELA DE DOCUMENTOS -->
+<div class="modal" id="modalDocs">
+<div class="modal-conteudo">
+
+<div class="topo">
+<div>
+<h3>Documentos do cliente</h3>
+<p id="nomeClienteDocs"></p>
+</div>
+<button class="fechar" id="fecharDocs">Fechar</button>
+</div>
+
+<hr>
+
+<label>Pesquisar documentos</label>
+<input id="docsBusca" type="search" placeholder="Filtrar documentos pelo nome..." aria-label="Pesquisar documentos do cliente">
+<label>Selecionar documentos</label>
+<input type="file" id="arquivos" multiple>
+
+<p class="pequeno">
+Limite de 20 MB por arquivo. Os documentos ficam privados.
+</p>
+
+<button id="enviarDocs">Enviar documentos</button>
+
+<p id="mensagemDocs"></p>
+
+<hr>
+
+<h3>Arquivos anexados</h3>
+<div id="listaDocs">Carregando documentos...</div>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+
+<div id="abaPotencia" class="tab-pane" hidden>
+  <section class="potencia-card">
+    <h3>Potência estimada de equipamentos</h3>
+    <p class="sub">Digite o nome do equipamento, por exemplo, “máquina de lavar”, “geladeira” ou “ar-condicionado”. O sistema mostrará uma estimativa de consumo em watts, sem precisar informar marca ou modelo.</p>
+    <div class="potencia-busca">
+      <input id="potEquipamento" type="search" list="listaEquipamentosPotencia" placeholder="Digite o nome do equipamento..." autocomplete="off" aria-label="Nome do equipamento">
+      <datalist id="listaEquipamentosPotencia"></datalist>
+      <button id="potBuscar" type="button">Consultar potência</button>
+    </div>
+    <div class="potencia-exemplos">
+      <button type="button" data-equipamento="máquina de lavar">Máquina de lavar</button>
+      <button type="button" data-equipamento="geladeira">Geladeira</button>
+      <button type="button" data-equipamento="ar-condicionado 12000 BTU">Ar-condicionado</button>
+      <button type="button" data-equipamento="chuveiro elétrico">Chuveiro elétrico</button>
+    </div>
+    <div class="potencia-resultado" id="potResultado" aria-live="polite">
+      <div>Potência estimada</div>
+      <strong>Digite um equipamento para consultar</strong>
+      <div class="potencia-faixa">A estimativa será exibida em watts (W).</div>
+    </div>
+    <div class="potencia-formula" id="potFormula">Os valores são aproximados e podem variar conforme a capacidade, o modelo e o modo de funcionamento. Para dimensionamento elétrico, confira sempre a etiqueta ou o manual do aparelho.</div>
+  </section>
+</div>
+
+<div id="abaObservacoes" class="tab-pane" hidden>
+  <section class="card observacao-card">
+    <h3>Gerar texto de observação</h3>
+    <p class="pequeno">Preencha os campos abaixo. O sistema organizará tudo no padrão de texto usado no atendimento, pronto para copiar e colar.</p>
+    <div class="grid observacao-grid">
+      <div class="full"><label for="obsModelo">Modelo de observação</label><select id="obsModelo"><option value="horario">Alteração de horário</option><option value="rural">Enquadramento tarifa rural – aquicultura/irrigação</option></select></div>
+      <div><label for="obsNome">Nome do cliente</label><input id="obsNome" type="text"></div>
+      <div><label for="obsDocumentos">Documentos apresentados</label><input id="obsDocumentos" type="text"></div>
+      <div class="full" id="obsSolicitacaoArea"><label for="obsSolicitacao">Solicitação (após SOL)</label><input id="obsSolicitacao" type="text"></div>
+      <div><label for="obsTelefone">Telefone</label><input id="obsTelefone" type="tel" inputmode="tel"></div>
+      <div><label for="obsTemEmail">E-mail</label><select id="obsTemEmail"><option value="nao">Não possui e-mail</option><option value="sim">Possui e-mail</option></select></div>
+      <div class="full" id="obsEmailArea" hidden><label for="obsEmail">Endereço de e-mail</label><input id="obsEmail" type="email"></div>
+      <div class="full" id="obsReferenciaArea" hidden><label for="obsReferencia">Ponto de referência</label><input id="obsReferencia" type="text"></div>
+      <div class="full" id="obsHorarioArea" hidden><label for="obsHorario">Horário escolhido pelo cliente</label><input id="obsHorario" type="text"></div>
+      <div class="full"><label>Portaria normativa</label><div class="observacao-portaria">137/2026</div></div>
+    </div>
+    <div class="acoes" style="margin:8px 0 16px">
+      <button type="button" id="obsGerar">Gerar texto</button>
+      <button type="button" class="limpar" id="obsLimpar">Limpar campos</button>
+    </div>
+    <label for="obsResultado">Texto pronto para copiar</label>
+    <textarea id="obsResultado" rows="5" style="width:100%;padding:13px;border:1px solid #ccd5df;border-radius:8px;font:14px/1.5 Arial,sans-serif;resize:vertical" placeholder="O texto gerado aparecerá aqui..."></textarea>
+    <div class="acoes" style="margin-top:10px">
+      <button type="button" id="obsCopiar">Copiar texto</button>
+    </div>
+    <p id="obsStatus" class="pequeno" aria-live="polite"></p>
+  </section>
+</div>
+
+<script>
+const SUPABASE_URL = "https://vfwvwgmgizavtnoptrvb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_e6iGnalwPhL0kCyf1lhBDg_vqmM12UE";
+const BUCKET = "documentos-clientes";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+let usuarioAtual = null;
+let clientes = [];
+let editando = null;
+let clienteDocumentos = null;
+let documentosClienteAtuais = [];
+let dataInicial = "";
+let dataFinal = "";
+
+const $ = id => document.getElementById(id);
+
+// FORMATAÇÃO DO TELEFONE
+$("telefone").addEventListener("input", e => {
+  let n = e.target.value.replace(/\D/g,"").slice(0,11);
+
+  if(n.length > 10)
+    n = n.replace(/^(\d{2})(\d{5})(\d{4})/,"($1) $2-$3");
+  else if(n.length > 6)
+    n = n.replace(/^(\d{2})(\d{4})(\d{0,4})/,"($1) $2-$3");
+  else if(n.length > 2)
+    n = n.replace(/^(\d{2})(\d{0,5})/,"($1) $2");
+  else if(n.length)
+    n = "(" + n;
+
+  e.target.value = n;
+});
+
+// FORMATAÇÃO DE DATA
+function formatarData(data){
+  if(!data) return "Não informada";
+
+  return new Date(data).toLocaleString("pt-BR",{
+    day:"2-digit",
+    month:"2-digit",
+    year:"numeric",
+    hour:"2-digit",
+    minute:"2-digit"
+  });
+}
+
+function dataLocal(data){
+  const d = new Date(data);
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth()+1).padStart(2,"0");
+  const dia = String(d.getDate()).padStart(2,"0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+// VERIFICAR LOGIN
+async function iniciar(){
+  const {data,error} = await db.auth.getSession();
+
+  if(error || !data.session){
+    location.href = "index.html";
+    return;
+  }
+
+  usuarioAtual = data.session.user;
+  document.body.classList.add("autenticado");
+  await carregar();
+}
+
+// CARREGAR CLIENTES
+async function carregar(){
+  $("vazio").textContent = "Carregando clientes...";
+
+  const {data,error} = await db.from("clientes")
+    .select("id,nome,uc,telefone,created_at")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    $("vazio").textContent = "Erro: " + error.message;
+    return;
+  }
+
+  clientes = data || [];
+  $("totalGeral").textContent = clientes.length;
+  mostrar();
+  renderizarDashboard();
+}
+
+// FILTROS
+function normalizarBusca(valor){
+  return String(valor||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR").trim();
+}
+
+function clientesFiltrados(){
+  const termo = normalizarBusca($("pesquisa").value);
+
+  return clientes.filter(c => {
+    const texto = [c.nome,c.uc,c.telefone].some(v=>normalizarBusca(v).includes(termo));
+
+    const dia = dataLocal(c.created_at);
+
+    return texto &&
+      (!dataInicial || dia >= dataInicial) &&
+      (!dataFinal || dia <= dataFinal);
+  });
+}
+
+// MOSTRAR CLIENTES
+function mostrar(){
+  const encontrados = clientesFiltrados();
+  const lista = $("lista");
+
+  lista.innerHTML = "";
+  $("totalPeriodo").textContent = encontrados.length;
+
+  $("vazio").style.display =
+    encontrados.length ? "none" : "block";
+
+  if(!encontrados.length){
+    $("vazio").textContent = "Nenhum cliente encontrado.";
+  }
+
+  encontrados.forEach(c => {
+    const tr = document.createElement("tr");
+
+    [c.nome,c.uc,c.telefone || "",formatarData(c.created_at)]
+      .forEach(v => {
+        const td = document.createElement("td");
+        td.textContent = v;
+        tr.appendChild(td);
+      });
+
+    const td = document.createElement("td");
+    td.className = "acoes";
+
+    const docs = document.createElement("button");
+    docs.textContent = "Documentos";
+    docs.className = "documentos";
+    docs.onclick = () => abrirDocumentos(c);
+
+    const editar = document.createElement("button");
+    editar.textContent = "Editar";
+    editar.className = "editar";
+    editar.onclick = () => prepararEdicao(c);
+
+    const excluir = document.createElement("button");
+    excluir.textContent = "Excluir";
+    excluir.className = "excluir";
+    excluir.onclick = () => remover(c);
+
+    td.append(docs,editar,excluir);
+    tr.appendChild(td);
+    lista.appendChild(tr);
+  });
+}
+
+// RELATÓRIO POR DATA
+$("filtrar").onclick = () => {
+  const inicio = $("dataInicio").value;
+  const fim = $("dataFim").value;
+
+  if(inicio && fim && inicio > fim){
+    alert("A data inicial não pode ser posterior à data final.");
+    return;
+  }
+
+  dataInicial = inicio;
+  dataFinal = fim;
+
+  $("periodoTexto").textContent =
+    inicio || fim
+    ? "Exibindo clientes do período selecionado."
+    : "Exibindo todos os clientes.";
+
+  mostrar();
+};
+
+$("limparDatas").onclick = () => {
+  $("dataInicio").value = "";
+  $("dataFim").value = "";
+  dataInicial = "";
+  dataFinal = "";
+  $("periodoTexto").textContent = "Exibindo todos os clientes.";
+  mostrar();
+};
+
+// EXPORTAR EXCEL
+$("exportar").onclick = () => {
+  const encontrados = clientesFiltrados();
+
+  if(!encontrados.length){
+    alert("Não há clientes para exportar.");
+    return;
+  }
+
+  if(typeof XLSX === "undefined"){
+    alert("Não foi possível carregar o Excel. Verifique sua internet.");
+    return;
+  }
+
+  const dados = encontrados.map(c => ({
+    "Nome do cliente": c.nome,
+    "Unidade Consumidora": c.uc,
+    "Telefone": c.telefone || "",
+    "Data do cadastro": formatarData(c.created_at)
+  }));
+
+  const planilha = XLSX.utils.json_to_sheet(dados);
+  const livro = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(livro,planilha,"Clientes");
+
+  XLSX.writeFile(
+    livro,
+    dataInicial || dataFinal
+      ? "Relatorio_clientes_periodo.xlsx"
+      : "Relatorio_todos_clientes.xlsx"
+  );
+};
+
+// EDITAR CLIENTE
+function prepararEdicao(c){
+  editando = c.id;
+  $("nome").value = c.nome;
+  $("uc").value = c.uc;
+  $("telefone").value = c.telefone || "";
+  $("arquivosCadastro").value = "";
+
+  $("salvar").textContent = "Salvar alterações";
+  $("cancelar").style.display = "inline-block";
+
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+$("cancelar").onclick = () => {
+  editando = null;
+  $("formCliente").reset();
+  $("salvar").textContent = "Cadastrar cliente";
+  $("cancelar").style.display = "none";
+  $("mensagem").textContent = "";
+};
+
+// ENVIAR ARQUIVOS PARA A PASTA DO CLIENTE
+async function enviarArquivosDoCadastro(clienteId, arquivos){
+  if(!arquivos || !arquivos.length) return [];
+
+  const pasta = usuarioAtual.id + "/" + clienteId;
+  const erros = [];
+
+  for(const arquivo of arquivos){
+    if(arquivo.size > 20 * 1024 * 1024){
+      erros.push(arquivo.name + ": arquivo maior que 20 MB");
+      continue;
+    }
+
+    const nomeSeguro = arquivo.name.replace(/[^\w.\-() ]/g,"_");
+    const caminho = pasta + "/" + Date.now() + "_" + nomeSeguro;
+
+    const {error} = await db.storage
+      .from(BUCKET)
+      .upload(caminho,arquivo,{
+        cacheControl:"3600",
+        upsert:false
+      });
+
+    if(error) erros.push(arquivo.name + ": " + error.message);
+  }
+
+  return erros;
+}
+
+// CADASTRAR OU ATUALIZAR CLIENTE E ENVIAR ANEXOS
+$("formCliente").addEventListener("submit",async e => {
+  e.preventDefault();
+
+  const dados = {
+    nome:$("nome").value.trim(),
+    uc:$("uc").value.trim(),
+    telefone:$("telefone").value.trim()
+  };
+
+  const arquivosSelecionados = Array.from($("arquivosCadastro").files);
+
+  if(arquivosSelecionados.some(a => a.size > 20 * 1024 * 1024)){
+    $("mensagem").textContent = "Um ou mais arquivos ultrapassam o limite de 20 MB.";
+    return;
+  }
+
+  $("salvar").disabled = true;
+  $("mensagem").textContent = "Salvando cliente...";
+
+  let resultado;
+  let clienteId = editando;
+
+  if(editando){
+    resultado = await db.from("clientes")
+      .update({...dados,updated_at:new Date().toISOString()})
+      .eq("id",editando);
+  }else{
+    resultado = await db.from("clientes")
+      .insert({...dados,user_id:usuarioAtual.id})
+      .select("id")
+      .single();
+
+    if(!resultado.error && resultado.data){
+      clienteId = resultado.data.id;
+    }
+  }
+
+  if(resultado.error){
+    $("mensagem").textContent = "Erro ao salvar cliente: " + resultado.error.message;
+  }else{
+    let errosArquivos = [];
+
+    if(arquivosSelecionados.length){
+      $("mensagem").textContent = "Cliente salvo. Enviando documentos...";
+      errosArquivos = await enviarArquivosDoCadastro(clienteId,arquivosSelecionados);
+    }
+
+    await registrarHistorico(editando?"Edição":"Cadastro","Cliente",clienteId,(dados.nome||"Cliente")+" • UC "+(dados.uc||""));
+
+    if(errosArquivos.length){
+      $("mensagem").textContent =
+        "Cliente salvo, mas houve erro em alguns anexos: " + errosArquivos.join(" | ") +
+        ". Você poderá tentar novamente pelo botão Documentos.";
+    }else{
+      $("mensagem").textContent =
+        editando
+          ? "Cliente atualizado!" + (arquivosSelecionados.length ? " Documentos anexados!" : "")
+          : "Cliente cadastrado!" + (arquivosSelecionados.length ? " Documentos anexados!" : "");
+    }
+
+    $("formCliente").reset();
+    editando = null;
+    $("salvar").textContent = "Cadastrar cliente";
+    $("cancelar").style.display = "none";
+
+    await carregar();
+  }
+
+  $("salvar").disabled = false;
+});
+
+// EXCLUIR CLIENTE
+async function remover(c){
+  if(!confirm("Deseja excluir o cliente " + c.nome + "?")) return;
+
+  const {error} = await db.from("clientes")
+    .delete()
+    .eq("id",c.id);
+
+  if(error){
+    alert("Erro ao excluir: " + error.message);
+  }else{
+    await registrarHistorico('Exclusão','Cliente',c.id,c.nome+' • UC '+(c.uc||''));
+    await carregar();
+  }
+}
+
+// ABRIR DOCUMENTOS DO CLIENTE
+async function abrirDocumentos(c){
+  clienteDocumentos = c;
+
+  $("nomeClienteDocs").textContent =
+    c.nome + " | UC: " + c.uc;
+
+  $("arquivos").value = "";
+  $("docsBusca").value = "";
+  $("mensagemDocs").textContent = "";
+  $("listaDocs").textContent = "Carregando documentos...";
+
+  $("modalDocs").style.display = "flex";
+
+  await carregarDocumentos();
+}
+
+// FECHAR JANELA
+function fecharDocumentos(){
+  $("modalDocs").style.display = "none";
+  clienteDocumentos = null;
+}
+
+$("fecharDocs").onclick = fecharDocumentos;
+
+$("modalDocs").addEventListener("click",e => {
+  if(e.target === $("modalDocs")) fecharDocumentos();
+});
+
+// CARREGAR DOCUMENTOS
+async function carregarDocumentos(){
+  if(!clienteDocumentos || !usuarioAtual) return;
+
+  const pasta =
+    usuarioAtual.id + "/" + clienteDocumentos.id;
+
+  const {data,error} = await db.storage
+    .from(BUCKET)
+    .list(pasta,{
+      limit:100,
+      sortBy:{column:"created_at",order:"desc"}
+    });
+
+  const lista = $("listaDocs");
+  lista.innerHTML = "";
+
+  if(error){
+    lista.textContent = "Erro ao consultar documentos: " + error.message;
+    return;
+  }
+
+  documentosClienteAtuais = (data || []).filter(a => a.name);
+  renderizarDocumentosCliente();
+}
+
+function renderizarDocumentosCliente(){
+  const lista=$('listaDocs');if(!lista)return;
+  const termo=normalizarBusca($('docsBusca')?.value||'');
+  const arquivos=documentosClienteAtuais.filter(a=>normalizarBusca(a.name).includes(termo));
+  lista.innerHTML='';
+  if(!arquivos.length){lista.textContent=documentosClienteAtuais.length?'Nenhum documento corresponde à pesquisa.':'Nenhum documento anexado a este cliente.';return;}
+  const pasta=usuarioAtual.id+'/'+clienteDocumentos.id;
+  arquivos.forEach(arquivo => {
+    const caminho = pasta + "/" + arquivo.name;
+
+    const linha = document.createElement("div");
+    linha.className = "arquivo";
+
+    const nome = document.createElement("div");
+    nome.className = "arquivo-nome";
+    nome.textContent = arquivo.name;
+
+    const botoes = document.createElement("div");
+    botoes.className = "acoes";
+
+    const baixar = document.createElement("button");
+    baixar.textContent = "Baixar";
+    baixar.onclick = () => baixarDocumento(caminho);
+
+    const excluir = document.createElement("button");
+    excluir.textContent = "Excluir";
+    excluir.className = "excluir";
+    excluir.onclick = () => excluirDocumento(caminho,arquivo.name);
+
+    botoes.append(baixar,excluir);
+    linha.append(nome,botoes);
+    lista.appendChild(linha);
+  });
+}
+
+// ENVIAR DOCUMENTOS
+$("enviarDocs").onclick = async () => {
+  if(!clienteDocumentos) return;
+
+  const arquivos = Array.from($("arquivos").files);
+
+  if(!arquivos.length){
+    alert("Selecione pelo menos um documento.");
+    return;
+  }
+
+  if(arquivos.some(a => a.size > 20 * 1024 * 1024)){
+    alert("Cada arquivo deve ter no máximo 20 MB.");
+    return;
+  }
+
+  $("enviarDocs").disabled = true;
+  $("mensagemDocs").textContent = "Enviando documentos...";
+
+  const pasta =
+    usuarioAtual.id + "/" + clienteDocumentos.id;
+
+  let erros = [];
+
+  for(const arquivo of arquivos){
+
+    const nomeSeguro = arquivo.name.replace(/[^\w.\-() ]/g,"_");
+    const caminho = pasta + "/" + Date.now() + "_" + nomeSeguro;
+
+    const {error} = await db.storage
+      .from(BUCKET)
+      .upload(caminho,arquivo,{
+        cacheControl:"3600",
+        upsert:false
+      });
+
+    if(error){
+      erros.push(arquivo.name + ": " + error.message);
+    }
+  }
+
+  $("enviarDocs").disabled = false;
+  $("arquivos").value = "";
+
+  if(erros.length){
+    $("mensagemDocs").textContent =
+      "Alguns arquivos não foram enviados: " + erros.join(" | ");
+  }else{
+    $("mensagemDocs").textContent = "Documentos enviados com sucesso!";
+  }
+
+  if(!erros.length) await registrarHistorico('Envio de documento','Cliente',clienteDocumentos.id,'Arquivos enviados para '+clienteDocumentos.nome);
+  await carregarDocumentos();
+};
+$('docsBusca').addEventListener('input',renderizarDocumentosCliente);
+
+// BAIXAR DOCUMENTO PRIVADO
+async function baixarDocumento(caminho){
+  const {data,error} = await db.storage
+    .from(BUCKET)
+    .createSignedUrl(caminho,60,{download:true});
+
+  if(error){
+    alert("Erro ao abrir documento: " + error.message);
+    return;
+  }
+
+  window.location.assign(data.signedUrl);
+}
+
+// EXCLUIR DOCUMENTO
+async function excluirDocumento(caminho,nome){
+  if(!confirm("Deseja excluir o documento " + nome + "?")) return;
+
+  const {error} = await db.storage
+    .from(BUCKET)
+    .remove([caminho]);
+
+  if(error){
+    alert("Erro ao excluir: " + error.message);
+    return;
+  }
+
+  $("mensagemDocs").textContent = "Documento excluído.";
+  await registrarHistorico('Exclusão de documento','Cliente',clienteDocumentos?.id,nome);
+  await carregarDocumentos();
+}
+
+// PESQUISA
+$("pesquisa").addEventListener("input",mostrar);
+
+// SAIR
+$("sair").onclick = async () => {
+  await db.auth.signOut();
+  location.href = "index.html";
+};
+
+
+// MÓDULOS DE PROTOCOLOS E COMUNICADOS (mesmo login do sistema de clientes)
+const PROTOCOLOS_INICIAIS = [{"uc":"67208258","protocolo":"1069654165","contato":"POLO DO ELETRO COMERCIAL DE MOVEIS LTDA","servico":"LIGAÇÃO NOVA","os":"A010641575","data":"23/10/2026","prazo":"30/10/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"29/10/2026, 10:56:53"},{"uc":"1370989","protocolo":"1072371028","contato":"FRANCISCA DE SOUSA SILVA","servico":"ERRO DE LEITURA","os":"","data":"29/10/2026","prazo":"06/11/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"29/10/2026, 14:15:34"},{"uc":"67233819","protocolo":"1072218342","contato":"FRANCISCA CATARINA MONTEIRO GIFONI","servico":"TROCA DE TITULARIDADE","os":"A010700130","data":"29/10/2026","prazo":"06/11/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"29/10/2026, 13:58:13"},{"uc":"9101845","protocolo":"1072426400","contato":"MARIA CLEUDIENE DE LIMA MESQUITA","servico":"ENCERRAMENTO DE CONTRATO","os":"A010704703","data":"29/10/2026","prazo":"06/11/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"29/10/2026, 15:38:56"},{"uc":"66852890","protocolo":"1072198445","contato":"MARIA GILVANISE DE OLIVEIRA","servico":"BAIXA RENDA","os":"A010699544","data":"29/10/2026","prazo":"06/11/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"29/10/2026, 10:41:08"},{"uc":"67236103","protocolo":"1072392142","contato":"MARIA DAS GRACAS FERREIRA","servico":"TROCA DE TITULARIDADE","os":"A010703957","data":"29/10/2026","prazo":"06/11/2026","atendente":"Leandro Sousa","status":"Aprovado","av_marcado":false,"atualizado_em":"03/11/2026, 08:00:26"},{"uc":"8321149","protocolo":"1072415205","contato":"FRANCISCO RONER DOS SANTOS NASCIMENTO","servico":"RETIRADA DO FLAG","os":"","data":"29/10/2026","prazo":"09/11/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":true,"atualizado_em":"29/10/2026, 15:27:18"},{"uc":"7266016","protocolo":"1074144402","contato":"FRANCISCO ALAN MOREIRA DA SILVA","servico":"RETIRADA DO SPC","os":"A010738770","data":"03/11/2026","prazo":"03/12/2026","atendente":"Leandro Sousa","status":"Pendente","av_marcado":false,"atualizado_em":"03/11/2026, 10:28:40"},{"uc":"67208676","protocolo":"1069672314","contato":"SAULO JORGE GUIMARAES CORREIA","servico":"TROCA DE TITULARIDADE","os":"A010642507","data":"23/10/2026","prazo":"3 DIAS UTEIS","atendente":"LEANDRO SOUSA","status":"Aprovado","av_marcado":false,"atualizado_em":"28/10/2026, 12:37:26"},{"uc":"8773317","protocolo":"1069617338","contato":"FRANCILANE DE OLIVEIRA MAIA","servico":"CREDITO GERACAO DISTRIBUIDA","os":"A010641575","data":"23/10/2026","prazo":"5 DIAS UTEIS","atendente":"LEANDRO SOUSA","status":"Aprovado","av_marcado":false,"atualizado_em":"27/10/2026, 12:49:00"},{"uc":"67221778","protocolo":"1071162759","contato":"SAMARA NOBRE DA SILVA","servico":"TROCA DE TITULARIDADE","os":"A010675935","data":"27/10/2026","prazo":"5 DIAS UTEIS","atendente":"LEANDRO SOUSA","status":"Aprovado","av_marcado":false,"atualizado_em":"29/10/2026, 07:46:45"},{"uc":"9229389","protocolo":"1069599788","contato":"FRANCISCO MARCELO DE OLIVEIRA LIMA","servico":"CREDITO GERACAO DISTRIBUIDA","os":"A010641244","data":"23/10/2026","prazo":"5 DIAS UTEIS","atendente":"Leandro Sousa","status":"Aprovado","av_marcado":false,"atualizado_em":"27/10/2026, 12:45:29"}];
+let protocolos = [];
+let protocoloEditando = null;
+const filtrosProtocolos = {protocolo:"", contato:"", servico:"", status:""};
+function abrirModulo(nome){
+  ['Clientes','Protocolos','Formularios','Potencia','Observacoes','Gestao'].forEach(n=>{const pane=$('aba'+n);if(pane)pane.hidden=n!==nome;const btn=document.querySelector('[data-tab="'+n+'"]');if(btn)btn.classList.toggle('ativa',n===nome);});
+  if(nome==='Protocolos') renderizarProtocolos();
+  if(nome==='Formularios') carregarFormularios();
+  if(nome==='Gestao') carregarHistorico();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>abrirModulo(b.dataset.tab)));
+
+// Gerador de observações com modelos de alteração de horário e tarifa rural.
+function atualizarModeloObservacao(){
+  const rural=$('obsModelo').value==='rural';
+  $('obsSolicitacaoArea').hidden=rural;
+  $('obsReferenciaArea').hidden=!rural;
+  $('obsHorarioArea').hidden=!rural;
+  $('obsDocumentos').placeholder=rural?'Ex.: RG':'Ex.: RG E FORMULARIO';
+  $('obsDocumentos').previousElementSibling.textContent=rural?'Documento apresentado':'Documentos apresentados';
+}
+$('obsModelo').addEventListener('change',atualizarModeloObservacao);
+$('obsTemEmail').addEventListener('change',()=>{
+  $('obsEmailArea').hidden=$('obsTemEmail').value!=='sim';
+});
+function gerarObservacao(){
+  const upper=id=>String($(id).value||'').trim().toLocaleUpperCase('pt-BR').replace(/\s+/g,' ');
+  const nome=upper('obsNome');
+  const documentos=upper('obsDocumentos');
+  const telefone=String($('obsTelefone').value||'').trim();
+  const email=$('obsTemEmail').value==='sim' ? 'EMAIL '+upper('obsEmail') : 'NAO POSSUI EMAIL';
+  const portaria='137/2026';
+  const partes=[];
+  if($('obsModelo').value==='rural'){
+    if(nome)partes.push(nome);
+    partes.push('SOLICITA ENQUADRAMENTO TARIFA RURAL AQUICULTURA/IRRIGACAO');
+    if(documentos)partes.push('APRESENTA DOCUMENTO '+documentos+' E FORMULARIO');
+    if(telefone)partes.push('TEL '+telefone);
+    if(email)partes.push(email);
+    const referencia=upper('obsReferencia');
+    const horario=upper('obsHorario');
+    if(referencia)partes.push('PONTO DE REFERENCIA '+referencia);
+    if(horario)partes.push('HORARIO ESCOLHIDO PELO CLIENTE '+horario);
+  }else{
+    if(nome)partes.push('SR '+nome);
+    if(documentos)partes.push('APRES '+documentos);
+    const solicitacao=upper('obsSolicitacao');
+    if(solicitacao)partes.push('SOL '+solicitacao);
+    if(telefone)partes.push('XX TELEFONE '+telefone);
+    if(email)partes.push('XX '+email);
+  }
+  if(portaria)partes.push(($('obsModelo').value==='rural'?'PORTARIA NORMATIVA ':'XX PORTARIA NORMATIVA ')+portaria);
+  $('obsResultado').value=partes.join(' ');
+  $('obsStatus').textContent=partes.length?'Texto gerado. Confira e copie para o sistema.':'Preencha pelo menos um campo para gerar o texto.';
+}
+$('obsGerar').addEventListener('click',gerarObservacao);
+$('obsLimpar').addEventListener('click',()=>{
+  ['obsNome','obsDocumentos','obsSolicitacao','obsTelefone','obsEmail','obsReferencia','obsHorario','obsResultado'].forEach(id=>$(id).value='');
+  $('obsModelo').value='horario';$('obsTemEmail').value='nao';$('obsEmailArea').hidden=true;$('obsStatus').textContent='Campos limpos.';atualizarModeloObservacao();
+});
+$('obsCopiar').addEventListener('click',async()=>{
+  const texto=$('obsResultado').value.trim();
+  if(!texto){$('obsStatus').textContent='Gere o texto antes de copiar.';return;}
+  try{
+    if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(texto);
+    else{$('obsResultado').focus();$('obsResultado').select();document.execCommand('copy');}
+    $('obsStatus').textContent='Texto copiado. Agora é só colar no sistema.';
+  }catch(e){$('obsResultado').focus();$('obsResultado').select();$('obsStatus').textContent='Texto selecionado. Use Ctrl+C para copiar.';}
+});
+atualizarModeloObservacao();
+
+// Consulta local de potência aproximada por tipo de equipamento.
+const equipamentosPotencia = [
+  {nome:'Máquina de lavar roupas',aliases:['maquina de lavar','lavadora','lavadora de roupas','maquina lavar'],watts:600,min:400,max:800},
+  {nome:'Secadora de roupas',aliases:['secadora','secadora de roupas'],watts:2500,min:1800,max:3000},
+  {nome:'Geladeira',aliases:['geladeira','refrigerador','freezer vertical','freezer horizontal'],watts:200,min:100,max:400},
+  {nome:'Ar-condicionado 9.000 BTU',aliases:['ar condicionado 9000','ar 9000','split 9000'],watts:900,min:700,max:1100},
+  {nome:'Ar-condicionado 12.000 BTU',aliases:['ar condicionado','ar condicionado 12000','ar 12000','split 12000'],watts:1200,min:900,max:1500},
+  {nome:'Ar-condicionado 18.000 BTU',aliases:['ar condicionado 18000','ar 18000','split 18000'],watts:1800,min:1400,max:2200},
+  {nome:'Ar-condicionado 24.000 BTU',aliases:['ar condicionado 24000','ar 24000','split 24000'],watts:2300,min:1800,max:2800},
+  {nome:'Micro-ondas',aliases:['microondas','micro ondas','forno microondas'],watts:1300,min:1000,max:1600},
+  {nome:'Chuveiro elétrico',aliases:['chuveiro','chuveiro eletrico','ducha eletrica'],watts:5500,min:4500,max:7500},
+  {nome:'Ferro de passar',aliases:['ferro','ferro de passar','ferro eletrico'],watts:1200,min:1000,max:1500},
+  {nome:'Air fryer',aliases:['air fryer','fritadeira eletrica','fritadeira sem oleo'],watts:1500,min:1200,max:2000},
+  {nome:'Forno elétrico',aliases:['forno eletrico','forninho eletrico'],watts:1800,min:1200,max:2500},
+  {nome:'Fogão elétrico / cooktop',aliases:['fogao eletrico','cooktop eletrico','boca eletrica'],watts:5000,min:3000,max:7000},
+  {nome:'Televisão LED',aliases:['televisao','televisor','tv','smart tv'],watts:100,min:50,max:200},
+  {nome:'Ventilador',aliases:['ventilador','ventilador de mesa','ventilador de teto'],watts:100,min:50,max:150},
+  {nome:'Liquidificador',aliases:['liquidificador'],watts:500,min:300,max:800},
+  {nome:'Batedeira',aliases:['batedeira'],watts:400,min:200,max:600},
+  {nome:'Cafeteira elétrica',aliases:['cafeteira','cafeteira eletrica'],watts:900,min:600,max:1200},
+  {nome:'Chaleira elétrica',aliases:['chaleira','chaleira eletrica'],watts:1800,min:1200,max:2200},
+  {nome:'Secador de cabelo',aliases:['secador','secador de cabelo'],watts:1800,min:1000,max:2200},
+  {nome:'Aspirador de pó',aliases:['aspirador','aspirador de po'],watts:1200,min:800,max:1600},
+  {nome:'Computador desktop',aliases:['computador','pc','desktop','computador de mesa'],watts:300,min:200,max:500},
+  {nome:'Notebook',aliases:['notebook','laptop'],watts:65,min:45,max:100},
+  {nome:'Impressora',aliases:['impressora','impressora laser','impressora jato de tinta'],watts:300,min:30,max:600},
+  {nome:'Lâmpada LED',aliases:['lampada','lampada led','luz led','lampada comum'],watts:10,min:5,max:20},
+  {nome:'Bomba d’água',aliases:['bomba dagua','bomba de agua','bomba d agua'],watts:750,min:350,max:1500},
+  {nome:'Motor elétrico pequeno',aliases:['motor eletrico','motor'],watts:750,min:250,max:2200},
+  {nome:'Aquecedor elétrico',aliases:['aquecedor','aquecedor eletrico'],watts:1500,min:1000,max:2000},
+  {nome:'Panela elétrica de arroz',aliases:['panela eletrica','panela de arroz','panela eletrica de arroz'],watts:700,min:400,max:1000},
+  {nome:'Sanduicheira',aliases:['sanduicheira','grill eletrico'],watts:800,min:600,max:1200},
+  {nome:'Roteador de internet',aliases:['roteador','modem','modem roteador'],watts:15,min:5,max:30}
+];
+function normalizarEquipamento(txt){
+  return String(txt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+}
+function consultarPotencia(){
+  const termo=normalizarEquipamento($('potEquipamento').value);
+  const resultado=$('potResultado');
+  if(!termo){
+    resultado.innerHTML='<div>Potência estimada</div><strong>Digite o nome de um equipamento</strong><div class="potencia-faixa">Ex.: máquina de lavar, geladeira ou televisão.</div>';
+    return;
+  }
+  const encontrado=equipamentosPotencia.find(e=>[e.nome,...e.aliases].some(a=>normalizarEquipamento(a)===termo))
+    || equipamentosPotencia.find(e=>[e.nome,...e.aliases].some(a=>normalizarEquipamento(a).includes(termo)||termo.includes(normalizarEquipamento(a))));
+  if(!encontrado){
+    resultado.innerHTML='<div>Não encontrei esse equipamento</div><strong>Tente outro nome</strong><div class="potencia-faixa">Você pode consultar, por exemplo: geladeira, máquina de lavar, micro-ondas, ventilador ou ar-condicionado 12.000 BTU.</div>';
+    return;
+  }
+  const watts=encontrado.watts.toLocaleString('pt-BR');
+  const faixa=encontrado.min.toLocaleString('pt-BR')+' a '+encontrado.max.toLocaleString('pt-BR')+' W';
+  resultado.innerHTML='';
+  const rotulo=document.createElement('div');rotulo.textContent=encontrado.nome;
+  const valor=document.createElement('strong');valor.textContent=watts+' W';
+  const detalhe=document.createElement('div');detalhe.className='potencia-faixa';detalhe.textContent='Faixa comum aproximada: '+faixa;
+  resultado.append(rotulo,valor,detalhe);
+  $('potFormula').textContent='Estimativa genérica para equipamentos dessa categoria. A potência real depende da capacidade, do modelo e do modo de uso; confirme na etiqueta ou no manual do aparelho.';
+}
+$('potBuscar').addEventListener('click',consultarPotencia);
+$('potEquipamento').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();consultarPotencia();}});
+$('potEquipamento').addEventListener('input',()=>{
+  const q=normalizarEquipamento($('potEquipamento').value);
+  if(q.length>=3) consultarPotencia();
+});
+document.querySelectorAll('[data-equipamento]').forEach(btn=>btn.addEventListener('click',()=>{
+  $('potEquipamento').value=btn.dataset.equipamento;consultarPotencia();
+}));
+$('listaEquipamentosPotencia').innerHTML=equipamentosPotencia.map(e=>'<option value="'+e.nome.replace(/"/g,'&quot;')+'"></option>').join('');
+
+function parsePrazoBR(txt){const m=String(txt||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(!m)return null;const d=new Date(+m[3],+m[2]-1,+m[1],23,59,59);return Number.isNaN(d.getTime())?null:d;}
+function diasPrazo(d){const hoje=new Date();hoje.setHours(0,0,0,0);const alvo=new Date(d.getFullYear(),d.getMonth(),d.getDate());return Math.round((alvo-hoje)/86400000);}
+async function carregarProtocolos(){
+  $('p_vazio').textContent='Carregando protocolos...';
+  const {data,error}=await db.from('protocolos').select('*').order('created_at',{ascending:true});
+  if(error){$('p_vazio').textContent='Erro ao carregar protocolos: '+error.message;return;}
+  protocolos=data||[];
+  if(protocolos.length===0 && PROTOCOLOS_INICIAIS.length){
+    const linhas=PROTOCOLOS_INICIAIS.map(p=>({uc:p.uc,protocolo:p.protocolo,contato:p.contato,servico:p.servico,os:p.os,data:p.data,prazo:p.prazo,atendente:p.atendente,status:p.status,av_marcado:!!p.av_marcado,user_id:usuarioAtual.id}));
+    const ins=await db.from('protocolos').insert(linhas).select('*');
+    if(ins.error){$('p_vazio').textContent='Não foi possível importar os 12 protocolos: '+ins.error.message;return;}
+    protocolos=ins.data||[];
+  }
+  renderizarProtocolos();renderizarComunicados();renderizarDashboard();
+}
+function protocolosFiltrados(){
+ const q=normalizarBusca($('p_busca').value);
+ const filtroPrazo=$('p_prazoFiltro')?.value||'';
+ return protocolos.filter(p=>{
+  const geral=[p.protocolo,p.uc,p.contato,p.servico,p.os,p.atendente].some(v=>normalizarBusca(v).includes(q));
+  const colunas=Object.entries(filtrosProtocolos).every(([k,v])=>!v||normalizarBusca(p[k]).includes(normalizarBusca(v)));
+  const fim=parsePrazoBR(p.prazo);const dias=fim?diasPrazo(fim):null;
+  const prazoOk=!filtroPrazo||(filtroPrazo==='vencido'&&dias!==null&&dias<0)||(filtroPrazo==='hoje'&&dias===0)||(filtroPrazo==='7dias'&&dias!==null&&dias>=1&&dias<=7)||(filtroPrazo==='semdata'&&dias===null);
+  return geral&&colunas&&prazoOk;
+ });
+}
+function renderizarProtocolos(){
+ const lista=$('p_lista');if(!lista)return;const filtrados=protocolosFiltrados();lista.innerHTML='';
+ $('p_contador').innerHTML=`<span>Total <strong>${protocolos.length}</strong></span><span>Pendentes <strong>${protocolos.filter(p=>p.status==='Pendente').length}</strong></span><span>Aprovados <strong>${protocolos.filter(p=>p.status==='Aprovado').length}</strong></span><span>Reprovados <strong>${protocolos.filter(p=>p.status==='Reprovado').length}</strong></span>`;
+ $('p_vazio').style.display=filtrados.length?'none':'block';if(!filtrados.length)$('p_vazio').textContent='Nenhum protocolo encontrado.';
+ filtrados.forEach(p=>{const tr=document.createElement('tr');const vals=[p.protocolo,p.uc,p.contato,p.servico];vals.forEach((v,i)=>{const td=document.createElement('td');td.textContent=String(v||'');if(i===0&&p.av_marcado){const tag=document.createElement('span');tag.className='p-av';tag.textContent='A/V';td.prepend(tag);}tr.appendChild(td);});const st=document.createElement('td');st.textContent=p.status||'Pendente';st.className='p-status p-'+String(p.status||'Pendente').toLowerCase();tr.appendChild(st);const ac=document.createElement('td');ac.className='p-acoes-antigas';const ed=document.createElement('button');ed.type='button';ed.textContent='Abrir';ed.className='p-edit';ed.onclick=()=>editarProtocolo(p);const del=document.createElement('button');del.type='button';del.textContent='Excluir';del.className='p-del';del.onclick=()=>excluirProtocolo(p);ac.append(ed,del);tr.appendChild(ac);lista.appendChild(tr);});
+}
+function abrirFormProtocolo(){ $('formProtocoloCard').hidden=false; $('tituloFormProtocolo').textContent=protocoloEditando?'Editar protocolo':'Cadastrar protocolo'; $('formProtocoloCard').scrollIntoView({behavior:'smooth',block:'start'}); }
+$('p_novo').onclick=()=>{limparFormProtocolo();abrirFormProtocolo();};
+$('p_fecharForm').onclick=()=>{$('formProtocoloCard').hidden=true;};
+function editarProtocolo(p){protocoloEditando=p.id;[['uc','uc'],['protocolo','protocolo'],['contato','contato'],['servico','servico'],['os','os'],['data','data'],['prazo','prazo'],['atendente','atendente'],['status','status']].forEach(([id,k])=>$('p_'+id).value=p[k]||'');$('p_av').checked=!!p.av_marcado;$('p_salvar').textContent='Salvar alterações';$('p_cancelar').hidden=false;abrirModulo('Protocolos');abrirFormProtocolo();}
+$('formProtocolo').addEventListener('submit',async e=>{e.preventDefault();const p={uc:$('p_uc').value.trim(),protocolo:$('p_protocolo').value.trim(),contato:$('p_contato').value.trim(),servico:$('p_servico').value.trim(),os:$('p_os').value.trim(),data:$('p_data').value.trim(),prazo:$('p_prazo').value.trim(),atendente:$('p_atendente').value.trim(),status:$('p_status').value,av_marcado:$('p_av').checked};if(!p.protocolo){alert('Informe o número do protocolo.');return;}const duplicado=protocolos.find(x=>String(x.protocolo)===p.protocolo&&x.id!==protocoloEditando);if(duplicado){alert('Já existe um protocolo com esse número.');return;}$('p_salvar').disabled=true;$('p_msg').textContent='Salvando...';let res;if(protocoloEditando)res=await db.from('protocolos').update(p).eq('id',protocoloEditando).select().single();else res=await db.from('protocolos').insert({...p,user_id:usuarioAtual.id}).select().single();$('p_salvar').disabled=false;if(res.error){$('p_msg').textContent='Erro: '+res.error.message;return;}if(protocoloEditando)protocolos=protocolos.map(x=>x.id===protocoloEditando?res.data:x);else protocolos.unshift(res.data);await registrarHistorico(protocoloEditando?'Edição':'Cadastro','Protocolo',res.data.id,'Protocolo '+res.data.protocolo);limparFormProtocolo();$('formProtocoloCard').hidden=true;renderizarProtocolos();renderizarComunicados();renderizarDashboard();$('p_msg').textContent='Protocolo salvo com sucesso.';});
+function limparFormProtocolo(){protocoloEditando=null;$('formProtocolo').reset();$('p_salvar').textContent='Cadastrar protocolo';$('p_cancelar').hidden=true;$('tituloFormProtocolo').textContent='Cadastrar protocolo';}
+$('p_cancelar').onclick=limparFormProtocolo;
+async function excluirProtocolo(p){if(!confirm('Excluir o protocolo '+p.protocolo+'?'))return;const {error}=await db.from('protocolos').delete().eq('id',p.id);if(error){alert('Erro ao excluir: '+error.message);return;}protocolos=protocolos.filter(x=>x.id!==p.id);await registrarHistorico('Exclusão','Protocolo',p.id,'Protocolo '+p.protocolo);renderizarProtocolos();renderizarComunicados();renderizarDashboard();}
+$('p_busca').addEventListener('input',()=>{const b=$('p_limparBusca');b.classList.toggle('visivel',!!$('p_busca').value);renderizarProtocolos();});
+$('p_limparBusca').onclick=()=>{$('p_busca').value='';$('p_limparBusca').classList.remove('visivel');renderizarProtocolos();};
+$('p_pesquisar').onclick=renderizarProtocolos;
+$('p_prazoFiltro').addEventListener('change',renderizarProtocolos);
+document.querySelectorAll('.titulo-filtro-antigo').forEach(btn=>btn.addEventListener('click',()=>{const campo=btn.dataset.filtro;const box=document.querySelector('[data-filtro-coluna="'+campo+'"]');const abrir=box.hidden;document.querySelectorAll('.filtro-coluna-antigo').forEach(x=>x.hidden=true);document.querySelectorAll('.titulo-filtro-antigo').forEach(x=>x.setAttribute('aria-expanded','false'));box.hidden=!abrir;btn.setAttribute('aria-expanded',String(abrir));if(abrir)box.querySelector('input,select').focus();}));
+document.querySelectorAll('.filtro-coluna-antigo input,.filtro-coluna-antigo select').forEach(el=>el.addEventListener('input',()=>{const campo=el.closest('[data-filtro-coluna]').dataset.filtroColuna;filtrosProtocolos[campo]=el.value.trim().toLocaleLowerCase('pt-BR');renderizarProtocolos();}));
+document.querySelectorAll('[data-limpar-filtro]').forEach(btn=>btn.addEventListener('click',()=>{const campo=btn.dataset.limparFiltro;const box=document.querySelector('[data-filtro-coluna="'+campo+'"]');box.querySelector('input,select').value='';filtrosProtocolos[campo]='';renderizarProtocolos();}));
+$('p_excel').onclick=()=>{if(typeof XLSX==='undefined'){alert('Excel indisponível.');return;}const linhas=protocolos.map(p=>({'A/V':p.av_marcado?'A/V':'','UC':p.uc,'Nº do Protocolo':p.protocolo,'Nome do Contato':p.contato,'Serviço Solicitado':p.servico,'Nº da Ordem de Serviço':p.os,'Data/Hora da Solicitação':p.data,'Prazo de Resposta':p.prazo,'Atendente':p.atendente,'Status':p.status}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(linhas),'Protocolos');XLSX.writeFile(wb,'Relatorio_Protocolos.xlsx');};
+function renderizarComunicados(){const el=$('comunicadosLista');if(!el)return;const agora=new Date();const pendentes=protocolos.filter(p=>(p.status||'Pendente').toLowerCase()==='pendente').map(p=>({p,fim:parsePrazoBR(p.prazo)})).sort((a,b)=>{if(!!a.p.av_marcado!==!!b.p.av_marcado)return a.p.av_marcado?-1:1;if(!a.fim&&!b.fim)return 0;if(!a.fim)return 1;if(!b.fim)return -1;return a.fim-b.fim;});el.innerHTML='';if(!pendentes.length){el.innerHTML='<div class="comunicados-vazio-antigo">Nenhum protocolo pendente no momento.</div>';return;}pendentes.forEach(({p,fim})=>{const b=document.createElement('button');b.type='button';b.className='comunicado-card'+(fim&&fim<agora?' vencido':'')+(p.av_marcado?' av':'');const strong=document.createElement('strong');strong.textContent='Protocolo '+p.protocolo;const line=document.createElement('span');line.textContent=(p.contato||'Contato não informado')+' • UC '+(p.uc||'—');const tipo=document.createElement('span');tipo.textContent=p.servico||'Serviço não informado';const prazo=document.createElement('span');let msg='Prazo não informado';if(fim){const d=diasPrazo(fim);msg=d<0?'Prazo vencido há '+Math.abs(d)+' dia(s)':d===0?'Vence hoje':d===1?'Falta 1 dia para finalizar':'Faltam '+d+' dias para finalizar';}prazo.textContent=(p.prazo?'Prazo: '+p.prazo+' — ':'')+msg;b.append(strong,line,tipo,prazo);b.onclick=()=>editarProtocolo(p);el.appendChild(b);});}
+
+
+// BIBLIOTECA DE FORMULÁRIOS (arquivos privados no Supabase Storage)
+const FORM_BUCKET = "formularios";
+let formularios = [];
+let formulariosCarregados = false;
+function tamanhoArquivo(bytes){if(!bytes)return "0 KB";const mb=bytes/1024/1024;return mb>=1?mb.toFixed(1)+" MB":Math.max(1,Math.round(bytes/1024))+" KB";}
+function extensaoArquivo(nome){const m=String(nome||"").split(".").pop();return (m||"FILE").toUpperCase().slice(0,5);}
+function dataFormulario(data){return data?new Date(data).toLocaleDateString("pt-BR"):"";}
+function formulariosFiltrados(){
+ const q=($("f_busca")?.value||"").trim().toLocaleLowerCase("pt-BR");
+ const cat=$("f_filtroCategoria")?.value||"";
+ return formularios.filter(f=>(!cat||f.categoria===cat)&&[f.titulo,f.categoria,f.descricao,f.arquivo_nome].some(v=>String(v||"").toLocaleLowerCase("pt-BR").includes(q)));
+}
+function renderizarFormularios(){
+ const lista=$("f_lista");if(!lista)return;
+ const itens=formulariosFiltrados();$("f_total").textContent=formularios.length+" arquivo(s) guardado(s)";
+ lista.innerHTML="";
+ if(!itens.length){const vazio=document.createElement("div");vazio.className="form-empty";vazio.textContent=formularios.length?"Nenhum formulário corresponde à pesquisa.":"Sua biblioteca está vazia. Adicione o primeiro formulário acima.";lista.appendChild(vazio);return;}
+ itens.forEach(f=>{
+  const card=document.createElement("article");card.className="form-file-card";
+  const tag=document.createElement("span");tag.className="form-tag";tag.textContent=f.categoria||"Geral";
+  const topo=document.createElement("div");topo.className="form-file-top";
+  const ico=document.createElement("div");ico.className="form-file-icon";ico.textContent=extensaoArquivo(f.arquivo_nome);
+  const titulo=document.createElement("h4");titulo.textContent=f.titulo;
+  topo.append(ico,titulo);
+  const desc=document.createElement("p");desc.className="form-desc";desc.textContent=f.descricao||f.arquivo_nome;
+  const meta=document.createElement("div");meta.className="form-file-meta";meta.textContent=tamanhoArquivo(f.tamanho)+" • Adicionado em "+dataFormulario(f.created_at);
+  const acoes=document.createElement("div");acoes.className="form-file-actions";
+  const baixar=document.createElement("button");baixar.type="button";baixar.className="form-download";baixar.textContent="↓ Baixar";baixar.onclick=()=>baixarFormulario(f);
+  const atualizar=document.createElement("button");atualizar.type="button";atualizar.className="form-download";atualizar.textContent="↻ Atualizar arquivo";atualizar.onclick=()=>selecionarAtualizacaoFormulario(f);
+  const excluir=document.createElement("button");excluir.type="button";excluir.className="form-delete";excluir.textContent="Excluir";excluir.onclick=()=>excluirFormulario(f);
+  acoes.append(baixar,atualizar,excluir);card.append(tag,topo,desc,meta,acoes);lista.appendChild(card);
+ });
+}
+async function carregarFormularios(forcar=false){
+ if(!usuarioAtual)return;
+ if(formulariosCarregados&&!forcar){renderizarFormularios();return;}
+ $("f_lista").innerHTML='<div class="form-empty">Carregando sua biblioteca...</div>';
+ const {data,error}=await db.from("formularios").select("*").order("created_at",{ascending:false});
+ if(error){$("f_lista").innerHTML="";const e=document.createElement("div");e.className="form-empty";e.textContent="Não foi possível carregar os formulários: "+error.message;$("f_lista").appendChild(e);return;}
+ formularios=data||[];formulariosCarregados=true;renderizarFormularios();
+}
+$("formUploadFormulario").addEventListener("submit",async e=>{
+ e.preventDefault();
+ const arquivo=$("f_arquivo").files[0];if(!arquivo){alert("Selecione um arquivo.");return;}
+ if(arquivo.size>20*1024*1024){alert("O arquivo ultrapassa o limite de 20 MB.");return;}
+ const titulo=$("f_titulo").value.trim();if(!titulo){alert("Informe o nome do formulário.");return;}
+ const ext=(arquivo.name.match(/\.([a-z0-9]+)$/i)||[])[1]||"bin";
+ const caminho=usuarioAtual.id+"/"+crypto.randomUUID()+"."+ext.toLowerCase();
+ const botao=$("f_enviar");botao.disabled=true;botao.textContent="Enviando...";$("formMensagem").textContent="Enviando arquivo para a nuvem...";
+ const up=await db.storage.from(FORM_BUCKET).upload(caminho,arquivo,{contentType:arquivo.type||"application/octet-stream",upsert:false});
+ if(up.error){$("formMensagem").textContent="Erro ao enviar: "+up.error.message;botao.disabled=false;botao.textContent="↑ Salvar na biblioteca";return;}
+ const registro={user_id:usuarioAtual.id,titulo,categoria:$("f_categoria").value,descricao:$("f_descricao").value.trim(),arquivo_nome:arquivo.name,storage_path:caminho,tamanho:arquivo.size,tipo:arquivo.type||""};
+ const ins=await db.from("formularios").insert(registro).select().single();
+ if(ins.error){await db.storage.from(FORM_BUCKET).remove([caminho]);$("formMensagem").textContent="O arquivo foi enviado, mas não foi cadastrado: "+ins.error.message;}
+ else{$("formUploadFormulario").reset();formularios.unshift(ins.data);formulariosCarregados=true;renderizarFormularios();await registrarHistorico('Cadastro','Formulário',ins.data.id,ins.data.titulo);$("formMensagem").textContent="Formulário salvo na biblioteca com sucesso!";}
+ botao.disabled=false;botao.textContent="↑ Salvar na biblioteca";
+});
+async function selecionarAtualizacaoFormulario(f){
+ const input=document.createElement("input");input.type="file";input.accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.jpg,.jpeg,.png";
+ input.onchange=async()=>{const arquivo=input.files&&input.files[0];if(!arquivo)return;await atualizarArquivoFormulario(f,arquivo);};
+ input.click();
+}
+async function atualizarArquivoFormulario(f,arquivo){
+ if(arquivo.size>20*1024*1024){alert("O arquivo ultrapassa o limite de 20 MB.");return;}
+ if(!confirm('Atualizar o arquivo de "'+f.titulo+'" por "'+arquivo.name+'"? O cadastro e as informações serão mantidos.'))return;
+ const ext=(arquivo.name.match(/\.([a-z0-9]+)$/i)||[])[1]||"bin";
+ const novoCaminho=usuarioAtual.id+"/"+crypto.randomUUID()+"."+ext.toLowerCase();
+ const up=await db.storage.from(FORM_BUCKET).upload(novoCaminho,arquivo,{contentType:arquivo.type||"application/octet-stream",upsert:false});
+ if(up.error){alert("Não foi possível enviar o novo arquivo: "+up.error.message);return;}
+ const upd=await db.from("formularios").update({arquivo_nome:arquivo.name,storage_path:novoCaminho,tamanho:arquivo.size,tipo:arquivo.type||""}).eq("id",f.id).eq("user_id",usuarioAtual.id).select().single();
+ if(upd.error){await db.storage.from(FORM_BUCKET).remove([novoCaminho]);alert("O novo arquivo foi enviado, mas não foi possível atualizar o cadastro: "+upd.error.message);return;}
+ const rm=await db.storage.from(FORM_BUCKET).remove([f.storage_path]);
+ await registrarHistorico('Atualização','Formulário',f.id,f.titulo+' • '+arquivo.name);
+ const i=formularios.findIndex(x=>x.id===f.id);if(i>=0)formularios[i]=upd.data;
+ renderizarFormularios();
+ if(rm.error)alert("O formulário foi atualizado, mas a versão antiga pode ter permanecido no armazenamento. Detalhe: "+rm.error.message);
+ else alert("Arquivo atualizado com sucesso! O cadastro foi mantido.");
+}
+async function baixarFormulario(f){
+ const {data,error}=await db.storage.from(FORM_BUCKET).createSignedUrl(f.storage_path,60);
+ if(error){alert("Não foi possível gerar o download: "+error.message);return;}
+ const a=document.createElement("a");a.href=data.signedUrl;a.download=f.arquivo_nome||f.titulo;a.target="_blank";document.body.appendChild(a);a.click();a.remove();
+}
+async function excluirFormulario(f){
+ if(!confirm('Excluir "'+f.titulo+'" da biblioteca?'))return;
+ const del=await db.from("formularios").delete().eq("id",f.id);
+ if(del.error){alert("Não foi possível excluir o registro: "+del.error.message);return;}
+ const rm=await db.storage.from(FORM_BUCKET).remove([f.storage_path]);
+ if(rm.error){alert("O registro foi removido, mas o arquivo pode ter permanecido no armazenamento: "+rm.error.message);}
+ formularios=formularios.filter(x=>x.id!==f.id);await registrarHistorico('Exclusão','Formulário',f.id,f.titulo);renderizarFormularios();
+}
+$("f_busca").addEventListener("input",renderizarFormularios);
+$("f_filtroCategoria").addEventListener("change",renderizarFormularios);
+
+// INDICADORES DO PAINEL
+function renderizarDashboard(){
+ const pendentes=protocolos.filter(p=>(p.status||'Pendente').toLowerCase()==='pendente');
+ const prazos=pendentes.map(p=>({p,d:parsePrazoBR(p.prazo)})).filter(x=>x.d);
+ const vencidos=prazos.filter(x=>diasPrazo(x.d)<0).length;
+ const proximos=prazos.filter(x=>diasPrazo(x.d)>=0&&diasPrazo(x.d)<=7).length;
+ if($('dashClientes'))$('dashClientes').textContent=clientes.length;
+ if($('dashProtocolos'))$('dashProtocolos').textContent=protocolos.length;
+ if($('dashPendentes'))$('dashPendentes').textContent=pendentes.length;
+ if($('dashAprovados'))$('dashAprovados').textContent=protocolos.filter(p=>(p.status||'').toLowerCase()==='aprovado').length;
+ if($('dashVencidos'))$('dashVencidos').textContent=vencidos;
+ if($('dashProximos'))$('dashProximos').textContent=proximos;
+}
+
+// HISTÓRICO DE ALTERAÇÕES (tabela audit_logs no Supabase)
+const SQL_HISTORICO = `create table if not exists public.audit_logs (
+  id bigint generated by default as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  action text not null,
+  entity text not null,
+  entity_id text,
+  details jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.audit_logs enable row level security;
+drop policy if exists audit_logs_select_own on public.audit_logs;
+create policy audit_logs_select_own on public.audit_logs for select to authenticated using (auth.uid() = user_id);
+drop policy if exists audit_logs_insert_own on public.audit_logs;
+create policy audit_logs_insert_own on public.audit_logs for insert to authenticated with check (auth.uid() = user_id);
+grant select, insert on public.audit_logs to authenticated;
+grant usage, select on sequence public.audit_logs_id_seq to authenticated;`;
+async function registrarHistorico(acao,entidade,id,detalhes){
+ if(!usuarioAtual)return;
+ try{
+  const {error}=await db.from('audit_logs').insert({user_id:usuarioAtual.id,action:acao,entity:entidade,entity_id:id==null?null:String(id),details:{descricao:String(detalhes||'')}});
+  if(error)console.warn('Histórico não configurado ou não disponível:',error.message);
+ }catch(e){console.warn('Não foi possível registrar histórico:',e);}
+}
+function exibirHistoricoSql(){
+ $('historicoSql').value=SQL_HISTORICO;
+ $('historicoSqlArea').hidden=false;
+ $('historicoSql').focus();$('historicoSql').select();
+}
+$('mostrarSqlHistorico').onclick=exibirHistoricoSql;
+$('copiarHistoricoSql').onclick=()=>{exibirHistoricoSql();try{document.execCommand('copy');$('historicoStatus').textContent='SQL selecionado. Copie e execute no SQL Editor do Supabase.';}catch(e){$('historicoStatus').textContent='Selecione o SQL exibido e copie manualmente.';}};
+async function carregarHistorico(){
+ if(!usuarioAtual)return;
+ const corpo=$('historicoLista');corpo.innerHTML='<tr><td colspan="4">Carregando histórico...</td></tr>';
+ const {data,error}=await db.from('audit_logs').select('created_at,action,entity,details').eq('user_id',usuarioAtual.id).order('created_at',{ascending:false}).limit(100);
+ if(error){corpo.innerHTML='<tr><td colspan="4">Histórico ainda não configurado. Use o botão “Configurar histórico no Supabase”.</td></tr>';$('historicoStatus').textContent='Tabela de histórico indisponível: '+error.message;return;}
+ $('historicoStatus').textContent='Histórico ativo. Exibindo os últimos '+(data||[]).length+' registros.';
+ corpo.innerHTML='';
+ if(!data?.length){corpo.innerHTML='<tr><td colspan="4">Ainda não há alterações registradas. Os próximos cadastros e edições aparecerão aqui.</td></tr>';return;}
+ data.forEach(item=>{const tr=document.createElement('tr');[new Date(item.created_at).toLocaleString('pt-BR'),item.action,item.entity,item.details?.descricao||''].forEach(v=>{const td=document.createElement('td');td.textContent=String(v||'');tr.appendChild(td);});corpo.appendChild(tr);});
+}
+$('atualizarHistorico').onclick=carregarHistorico;
+
+// BACKUP LOCAL DOS REGISTROS (não inclui binários do Storage)
+$('baixarBackup').onclick=()=>{
+ const pacote={sistema:'Painel de Clientes',versao_backup:1,gerado_em:new Date().toISOString(),clientes,protocolos,formularios:formularios.map(f=>({id:f.id,titulo:f.titulo,categoria:f.categoria,descricao:f.descricao,arquivo_nome:f.arquivo_nome,storage_path:f.storage_path,tamanho:f.tamanho,tipo:f.tipo,created_at:f.created_at}))};
+ const blob=new Blob([JSON.stringify(pacote,null,2)],{type:'application/json;charset=utf-8'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='backup_painel_clientes_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ $('backupStatus').textContent='Backup gerado em '+new Date().toLocaleString('pt-BR')+'. Os arquivos anexados permanecem no Storage do Supabase.';
+};
+
+// INICIAR
+(async()=>{await iniciar(); if(usuarioAtual){await carregarProtocolos();await carregarFormularios(true);renderizarDashboard();}})();
+
+</script>
+</body>
+</html>
