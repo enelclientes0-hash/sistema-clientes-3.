@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login - Cadastro de Clientes</title>
+<link rel="icon" type="image/png" sizes="128x128" href="favicon-enel.png">
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Arial;background:linear-gradient(135deg,#071b36,#123e70)}
+.login{width:90%;max-width:390px;padding:38px 30px;border-radius:16px;background:white;box-shadow:0 15px 45px #0005}
+h2{text-align:center;color:#12345a}
+p{text-align:center;color:#667085}
+label{display:block;margin:18px 0 7px;color:#24364b}
+input{width:100%;padding:13px;border:1px solid #ccd5df;border-radius:8px;font-size:16px}
+button{width:100%;margin-top:25px;padding:14px;border:0;border-radius:8px;background:#123e70;color:white;font-size:16px;font-weight:bold;cursor:pointer}
+#mensagem{font-size:14px;color:#b42318}
+</style>
+</head>
+<body>
+<div class="login">
+<h2>Cadastro de Clientes</h2>
+<p>Acesso ao sistema</p>
+<form id="loginForm">
+<label>Usuário</label>
+<input id="usuario" placeholder="Digite sua matrícula" required>
+<label>Senha</label>
+<input id="senha" type="password" placeholder="Digite sua senha" required>
+<button id="entrar">Entrar</button>
+<p id="mensagem"></p>
+</form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://vfwvwgmgizavtnoptrvb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_e6iGnalwPhL0kCyf1lhBDg_vqmM12UE";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+document.getElementById("loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const usuario = document.getElementById("usuario").value.trim();
+  const senha = document.getElementById("senha").value;
+  const mensagem = document.getElementById("mensagem");
+  const botao = document.getElementById("entrar");
+
+  if(usuario !== "016147"){
+    mensagem.textContent = "Usuário ou senha incorretos.";
+    return;
+  }
+
+  botao.disabled = true;
+  botao.textContent = "Entrando...";
+  mensagem.textContent = "";
+
+  const {error} = await db.auth.signInWithPassword({
+    email: "016147@cadastro-cliente.com",
+    password: senha
+  });
+
+  if(error){
+    mensagem.textContent = "Não foi possível entrar. Confira sua senha.";
+    botao.disabled = false;
+    botao.textContent = "Entrar";
+    return;
+  }
+
+  window.location.href = "painel.html";
+});
+</script>
+</body>
+</html>
